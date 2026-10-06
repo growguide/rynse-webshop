@@ -142,7 +142,7 @@ async function resolveImages() {
     heroClip: (() => {
       const mp4 = path.join(ASSETS, 'video', 'hero-drop.mp4');
       if (!existsSync(mp4)) return null;
-      const poster = existsSync(path.join(ASSETS, 'img', 'video-hero-drop-first.webp')) ? versioned('/assets/img/video-hero-drop-first.webp') : versioned(manifest.packshot?.src || '');
+      const poster = existsSync(path.join(ASSETS, 'video', 'hero-drop-first.webp')) ? versioned('/assets/video/hero-drop-first.webp') : versioned(manifest.packshot?.src || '');
       return { mp4: versioned('/assets/video/hero-drop.mp4'), webm: existsSync(path.join(ASSETS, 'video', 'hero-drop.webm')) ? versioned('/assets/video/hero-drop.webm') : null, poster, width: 1080, height: 1440 };
     })(),
     packshot: pick('packshot', 'RYNSE box of 40 cleansing wipes with loose navy sachets', { src: ph45, width: 800, height: 1000 }),

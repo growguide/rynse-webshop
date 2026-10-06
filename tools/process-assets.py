@@ -179,5 +179,6 @@ for key, spec in clips.items():
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(src), '-an', '-vf', vf, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', str(spec.get('crf_webm', 34)), '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', str(webm)], check=True)
     # Last frame as a JPEG/WebP poster so the page can hold the exact final image.
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-sseof', '-0.05', '-i', str(mp4), '-frames:v', '1', '-update', '1', str(VIDEO_OUT / f'{key}-last.webp')], check=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(mp4), '-frames:v', '1', '-update', '1', '-vf', 'scale=720:-2', '-quality', '70', str(VIDEO_OUT / f'{key}-first.webp')], check=True)
     print(f'  {key}: mp4 {mp4.stat().st_size / 1e6:.1f} MB, webm {webm.stat().st_size / 1e6:.1f} MB')
 print('Done.')
