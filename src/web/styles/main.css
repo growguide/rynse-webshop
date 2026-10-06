@@ -284,7 +284,8 @@ p { margin: 0; }
 @media (min-width: 900px) { .footer { padding-bottom: 48px; } }
 .footer-grid { display: grid; gap: 28px; }
 @media (min-width: 768px) { .footer-grid { grid-template-columns: 1.5fr 1fr 1fr 1fr; } }
-.footer-logo { color: var(--gold); width: 110px; }
+.footer-logo { color: var(--gold); display: inline-block; width: 110px; }
+.footer-logo svg { display: block; width: 100%; height: auto; }
 .footer h4 { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cream); margin-bottom: 14px; font-weight: 600; }
 .footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .footer a:hover { color: var(--gold); }
