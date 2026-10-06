@@ -1,0 +1,103 @@
+{
+  "hero-poster": {
+    "src": "/assets/img/hero-poster-2400.webp",
+    "srcset": "/assets/img/hero-poster-960.webp 960w, /assets/img/hero-poster-1600.webp 1600w, /assets/img/hero-poster-2400.webp 2400w",
+    "srcsetAvif": "/assets/img/hero-poster-960.avif 960w, /assets/img/hero-poster-1600.avif 1600w, /assets/img/hero-poster-2400.avif 2400w",
+    "width": 2400,
+    "height": 1357,
+    "alt": "RYNSE navy cleansing wipe sachet with gold wordmark floating in a dark studio"
+  },
+  "hero-poster-mobile": {
+    "src": "/assets/img/hero-poster-mobile-1080.webp",
+    "srcset": "/assets/img/hero-poster-mobile-720.webp 720w, /assets/img/hero-poster-mobile-1080.webp 1080w",
+    "srcsetAvif": "/assets/img/hero-poster-mobile-720.avif 720w, /assets/img/hero-poster-mobile-1080.avif 1080w",
+    "width": 1080,
+    "height": 1910,
+    "alt": "RYNSE navy cleansing wipe sachet with gold wordmark floating in a dark studio"
+  },
+  "hero-many": {
+    "src": "/assets/img/hero-many-1000.webp",
+    "srcset": "/assets/img/hero-many-600.webp 600w, /assets/img/hero-many-1000.webp 1000w",
+    "srcsetAvif": "/assets/img/hero-many-600.avif 600w, /assets/img/hero-many-1000.avif 1000w",
+    "width": 1000,
+    "height": 1250,
+    "alt": "A dozen RYNSE sachets floating in a dark navy studio"
+  },
+  "packshot": {
+    "src": "/assets/img/packshot-1400.webp",
+    "srcset": "/assets/img/packshot-600.webp 600w, /assets/img/packshot-1000.webp 1000w, /assets/img/packshot-1400.webp 1400w",
+    "srcsetAvif": "/assets/img/packshot-600.avif 600w, /assets/img/packshot-1000.avif 1000w, /assets/img/packshot-1400.avif 1400w",
+    "width": 1400,
+    "height": 1750,
+    "alt": "RYNSE box of 40 cleansing wipes with loose navy sachets"
+  },
+  "sachet-front": {
+    "src": "/assets/img/sachet-front-1200.webp",
+    "srcset": "/assets/img/sachet-front-400.webp 400w, /assets/img/sachet-front-800.webp 800w, /assets/img/sachet-front-1200.webp 1200w",
+    "srcsetAvif": null,
+    "width": 1200,
+    "height": 1200,
+    "alt": "RYNSE sachet, front view"
+  },
+  "sachet-angle": {
+    "src": "/assets/img/sachet-angle-1200.webp",
+    "srcset": "/assets/img/sachet-angle-400.webp 400w, /assets/img/sachet-angle-800.webp 800w, /assets/img/sachet-angle-1200.webp 1200w",
+    "srcsetAvif": null,
+    "width": 1200,
+    "height": 1200,
+    "alt": "RYNSE sachet, angled view"
+  },
+  "life-1": {
+    "src": "/assets/img/life-1-1200.webp",
+    "srcset": "/assets/img/life-1-480.webp 480w, /assets/img/life-1-800.webp 800w, /assets/img/life-1-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-1-480.avif 480w, /assets/img/life-1-800.avif 800w, /assets/img/life-1-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Man cooling down after a run on an Amsterdam canal bridge, holding a RYNSE sachet"
+  },
+  "life-2": {
+    "src": "/assets/img/life-2-1200.webp",
+    "srcset": "/assets/img/life-2-480.webp 480w, /assets/img/life-2-800.webp 800w, /assets/img/life-2-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-2-480.avif 480w, /assets/img/life-2-800.avif 800w, /assets/img/life-2-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Woman at Amsterdam Centraal station taking a RYNSE sachet from her coat pocket"
+  },
+  "life-3": {
+    "src": "/assets/img/life-3-1200.webp",
+    "srcset": "/assets/img/life-3-480.webp 480w, /assets/img/life-3-800.webp 800w, /assets/img/life-3-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-3-480.avif 480w, /assets/img/life-3-800.avif 800w, /assets/img/life-3-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Friends at a night festival on the Amsterdam waterfront, one holding a RYNSE sachet"
+  },
+  "life-4": {
+    "src": "/assets/img/life-4-1200.webp",
+    "srcset": "/assets/img/life-4-480.webp 480w, /assets/img/life-4-800.webp 800w, /assets/img/life-4-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-4-480.avif 480w, /assets/img/life-4-800.avif 800w, /assets/img/life-4-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Man on a bicycle along an Amsterdam canal at night with a RYNSE sachet in hand"
+  },
+  "life-5": {
+    "src": "/assets/img/life-5-1200.webp",
+    "srcset": "/assets/img/life-5-480.webp 480w, /assets/img/life-5-800.webp 800w, /assets/img/life-5-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-5-480.avif 480w, /assets/img/life-5-800.avif 800w, /assets/img/life-5-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Man on a cobbled Jordaan street at night before a date, holding a RYNSE sachet"
+  },
+  "life-6": {
+    "src": "/assets/img/life-6-1200.webp",
+    "srcset": "/assets/img/life-6-480.webp 480w, /assets/img/life-6-800.webp 800w, /assets/img/life-6-1200.webp 1200w",
+    "srcsetAvif": "/assets/img/life-6-480.avif 480w, /assets/img/life-6-800.avif 800w, /assets/img/life-6-1200.avif 1200w",
+    "width": 1200,
+    "height": 1500,
+    "alt": "Flat lay of pocket essentials with a RYNSE sachet as the centrepiece"
+  },
+  "og": {
+    "src": "/assets/img/og.jpg",
+    "width": 1200,
+    "height": 630
+  }
+}

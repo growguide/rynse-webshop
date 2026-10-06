@@ -1,0 +1,17 @@
+{
+  "desktop": {
+    "path": "/assets/hero/d/",
+    "count": 96,
+    "width": 1440,
+    "height": 814,
+    "ext": "webp"
+  },
+  "mobile": {
+    "path": "/assets/hero/m/",
+    "count": 64,
+    "width": 720,
+    "height": 1274,
+    "ext": "webp"
+  },
+  "generated": "2026-10-06"
+}
