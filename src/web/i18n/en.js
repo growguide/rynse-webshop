@@ -153,7 +153,7 @@ export default {
   'faq.q7': 'How can I pay?',
   'faq.a7': 'With iDEAL, Apple Pay and credit card (Visa, Mastercard). Payments are processed securely by Mollie.',
   'faq.q8': 'How fast do you deliver and what does shipping cost?',
-  'faq.a8': 'Delivery: {estimate}. Shipping costs {cost} and is free from {threshold}{subFree}. We currently ship to {countries}.',
+  'faq.a8': 'Delivery: {estimate}. We ship worldwide. Shipping costs {cost} in the Netherlands (free from {threshold}), {euCost} in the rest of Europe (free from {euThreshold}) and {worldCost} elsewhere (free from {worldThreshold}){subFree}. Orders outside the EU may be subject to import duties, payable by the recipient.',
   'faq.a8.subFree': ' — subscriptions always ship free',
   'faq.q9': 'Can I return my order?',
   'faq.a9': 'You can return an unopened pack within {days} days of delivery. See Shipping & Returns for the details.',
@@ -221,9 +221,6 @@ export default {
   'checkout.city': 'City',
   'checkout.required': 'Required.',
   'checkout.country': 'Country',
-  'checkout.country.NL': 'Netherlands',
-  'checkout.country.BE': 'Belgium',
-  'checkout.country.DE': 'Germany',
   'checkout.payment': 'Payment',
   'checkout.method.ideal': 'iDEAL',
   'checkout.method.applepay': 'Apple Pay',
@@ -280,11 +277,11 @@ export default {
 <h2>2. Products</h2><p>RYNSE sells cleansing wipes for personal hygiene. Product descriptions on this website are accurate to the best of our knowledge; images may differ slightly from the delivered product.</p>
 <h2>3. Prices and payment</h2><p>All prices are in euros and include VAT. Shipping costs are shown before you pay. Payment is made in advance via iDEAL, Apple Pay or credit card, processed by Mollie. An order is only final after payment has been confirmed.</p>
 <h2>4. Subscriptions</h2><p>With a subscription you authorise us (via a Mollie mandate) to charge the subscription price every {interval} and to ship a pack after each successful payment. The price, frequency and amount are shown before you confirm. You can cancel at any time from your account; cancellation takes effect immediately for all future deliveries and payments. Loyalty benefits apply only while a subscription is active; after cancellation the loyalty status resets and a new subscription starts again at year 1. If a recurring payment fails, Mollie may retry it; after repeated failure the subscription ends.</p>
-<h2>5. Delivery</h2><p>We deliver to {countries}. Estimated delivery time: {estimate}. Risk passes to you on delivery.</p>
+<h2>5. Delivery</h2><p>We deliver worldwide. Estimated delivery time: {estimate}. Risk passes to you on delivery. Import duties and taxes for deliveries outside the EU are payable by the recipient.</p>
 <h2>6. Right of withdrawal</h2><p>As a consumer you may cancel your order within {days} days after receiving it, without giving a reason, provided the pack is unopened (for hygiene reasons opened packs are excluded, in line with EU consumer law). See <a href="{shipping}">Shipping &amp; Returns</a>.</p>
 <h2>7. Complaints</h2><p>Contact {email}. We respond within 14 days. EU consumers can also use the <a href="https://ec.europa.eu/consumers/odr" rel="noopener" target="_blank">European ODR platform</a>.</p>
 <h2>8. Applicable law</h2><p>Dutch law applies. {localLaw}</p>`,
-  'legal.shipping': `<h2>Shipping</h2><ul><li>Countries: {countries}.</li><li>Cost: {cost} per order; free from {threshold}.{subFree}</li><li>Delivery time: {estimate}.</li><li>Carrier: {carrier}. You receive a tracking code by e-mail when your order ships.</li></ul>
+  'legal.shipping': `<h2>Shipping</h2><ul><li>We ship worldwide.</li><li>Netherlands: {cost} per order, free from {threshold}.</li><li>Rest of Europe: {euCost} per order, free from {euThreshold}.</li><li>Rest of the world: {worldCost} per order, free from {worldThreshold}.{subFree}</li><li>Delivery time: {estimate}.</li><li>Carrier: {carrier}. You receive a tracking code by e-mail when your order ships.</li><li>Outside the EU, import duties and taxes may be charged by local customs; these are payable by the recipient and are not included in our prices.</li></ul>
 <h2>Returns</h2><ul><li>You can return an unopened pack within {days} days of delivery.</li><li>Opened packs cannot be returned for hygiene reasons.</li><li>E-mail {email} with your order number; we'll send return instructions. {returnCost}</li><li>Refunds are issued to the original payment method within 14 days after we receive the return.</li></ul>
 <h2>Damaged or wrong delivery</h2><p>Send a photo to {email} within 7 days and we'll replace the pack free of charge.</p>`,
   'legal.shipping.subFree': ' Subscriptions always ship free.',
@@ -407,4 +404,6 @@ export default {
   'js.lang.suggest': 'Prefer {language}?',
   'js.lang.switch': 'Switch',
   'js.lang.dismiss': 'No thanks',
+  'shipping.worldwide': 'worldwide',
+  'checkout.duties': 'Shipping outside the EU: import duties or taxes may be charged by your local customs on delivery.',
 };

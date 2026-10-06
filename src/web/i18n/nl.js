@@ -149,7 +149,7 @@ export default {
   'faq.q7': 'Hoe kan ik betalen?',
   'faq.a7': 'Met iDEAL, Apple Pay en creditcard (Visa, Mastercard). Betalingen worden veilig verwerkt door Mollie.',
   'faq.q8': 'Hoe snel leveren jullie en wat kost verzending?',
-  'faq.a8': 'Levertijd: {estimate}. Verzending kost {cost} en is gratis vanaf {threshold}{subFree}. We verzenden momenteel naar {countries}.',
+  'faq.a8': 'Levertijd: {estimate}. We verzenden wereldwijd. Verzending kost {cost} in Nederland (gratis vanaf {threshold}), {euCost} in de rest van Europa (gratis vanaf {euThreshold}) en {worldCost} daarbuiten (gratis vanaf {worldThreshold}){subFree}. Bij bestellingen buiten de EU kunnen invoerrechten gelden, te betalen door de ontvanger.',
   'faq.a8.subFree': ' — abonnementen worden altijd gratis verzonden',
   'faq.q9': 'Kan ik mijn bestelling retourneren?',
   'faq.a9': 'Een ongeopende verpakking kun je binnen {days} dagen na ontvangst retourneren. Zie Verzending & retouren voor de details.',
@@ -213,9 +213,6 @@ export default {
   'checkout.city': 'Plaats',
   'checkout.required': 'Verplicht.',
   'checkout.country': 'Land',
-  'checkout.country.NL': 'Nederland',
-  'checkout.country.BE': 'België',
-  'checkout.country.DE': 'Duitsland',
   'checkout.payment': 'Betaling',
   'checkout.method.ideal': 'iDEAL',
   'checkout.method.applepay': 'Apple Pay',
@@ -268,11 +265,11 @@ export default {
 <h2>2. Producten</h2><p>RYNSE verkoopt cleansing wipes voor persoonlijke hygiëne. Productomschrijvingen op deze website zijn naar beste weten juist; afbeeldingen kunnen licht afwijken van het geleverde product.</p>
 <h2>3. Prijzen en betaling</h2><p>Alle prijzen zijn in euro's en inclusief btw. Verzendkosten worden getoond voordat je betaalt. Je betaalt vooraf via iDEAL, Apple Pay of creditcard, verwerkt door Mollie. Een bestelling is pas definitief nadat de betaling is bevestigd.</p>
 <h2>4. Abonnementen</h2><p>Met een abonnement machtig je ons (via een Mollie-machtiging) om elke {interval} de abonnementsprijs af te schrijven en na elke geslaagde betaling een verpakking te verzenden. Prijs, frequentie en bedrag worden getoond voordat je bevestigt. Je kunt op elk moment opzeggen via je account; opzegging gaat direct in voor alle toekomstige leveringen en betalingen. Loyaliteitsvoordelen gelden alleen zolang een abonnement actief is; na opzegging vervalt de loyaliteitsstatus en begint een nieuw abonnement opnieuw bij jaar 1. Mislukt een terugkerende betaling, dan kan Mollie deze opnieuw proberen; na herhaald mislukken eindigt het abonnement.</p>
-<h2>5. Levering</h2><p>We leveren in {countries}. Verwachte levertijd: {estimate}. Het risico gaat op jou over bij levering.</p>
+<h2>5. Levering</h2><p>We leveren wereldwijd. Verwachte levertijd: {estimate}. Het risico gaat op jou over bij levering. Invoerrechten en belastingen voor leveringen buiten de EU zijn voor rekening van de ontvanger.</p>
 <h2>6. Herroepingsrecht</h2><p>Als consument kun je je bestelling binnen {days} dagen na ontvangst zonder opgave van redenen annuleren, mits de verpakking ongeopend is (om hygiënische redenen zijn geopende verpakkingen uitgesloten, conform het EU-consumentenrecht). Zie <a href="{shipping}">Verzending &amp; retouren</a>.</p>
 <h2>7. Klachten</h2><p>Neem contact op via {email}. We reageren binnen 14 dagen. EU-consumenten kunnen ook het <a href="https://ec.europa.eu/consumers/odr" rel="noopener" target="_blank">Europese ODR-platform</a> gebruiken.</p>
 <h2>8. Toepasselijk recht</h2><p>Nederlands recht is van toepassing. {localLaw}</p>`,
-  'legal.shipping': `<h2>Verzending</h2><ul><li>Landen: {countries}.</li><li>Kosten: {cost} per bestelling; gratis vanaf {threshold}.{subFree}</li><li>Levertijd: {estimate}.</li><li>Vervoerder: {carrier}. Je ontvangt een track & trace-code per e-mail zodra je bestelling is verzonden.</li></ul>
+  'legal.shipping': `<h2>Verzending</h2><ul><li>We verzenden wereldwijd.</li><li>Nederland: {cost} per bestelling, gratis vanaf {threshold}.</li><li>Rest van Europa: {euCost} per bestelling, gratis vanaf {euThreshold}.</li><li>Rest van de wereld: {worldCost} per bestelling, gratis vanaf {worldThreshold}.{subFree}</li><li>Levertijd: {estimate}.</li><li>Vervoerder: {carrier}. Je ontvangt een track & trace-code per e-mail zodra je bestelling is verzonden.</li><li>Buiten de EU kan de lokale douane invoerrechten en belastingen heffen; die zijn voor rekening van de ontvanger en zitten niet in onze prijzen.</li></ul>
 <h2>Retouren</h2><ul><li>Een ongeopende verpakking kun je binnen {days} dagen na ontvangst retourneren.</li><li>Geopende verpakkingen kunnen om hygiënische redenen niet worden geretourneerd.</li><li>Mail naar {email} met je bestelnummer; we sturen je de retourinstructies. {returnCost}</li><li>Terugbetaling vindt plaats op de oorspronkelijke betaalmethode binnen 14 dagen nadat we de retour hebben ontvangen.</li></ul>
 <h2>Beschadigde of verkeerde levering</h2><p>Stuur binnen 7 dagen een foto naar {email}; we vervangen de verpakking kosteloos.</p>`,
   'legal.shipping.subFree': ' Abonnementen worden altijd gratis verzonden.',
@@ -393,4 +390,6 @@ export default {
   'js.lang.dismiss': 'Nee, bedankt',
   'hero.options': 'Kies eenmalig of abonnement ↓',
   'checkout.subConfirm': 'Door te betalen start je een abonnement: elke {interval} bezorgd en afgeschreven, altijd opzegbaar via je account.',
+  'shipping.worldwide': 'wereldwijd',
+  'checkout.duties': 'Verzending buiten de EU: de lokale douane kan bij levering invoerrechten of belastingen in rekening brengen.',
 };

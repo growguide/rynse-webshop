@@ -36,11 +36,25 @@
       if (!r.ok) throw new Error(q.error);
       $('[data-sum-totals]').innerHTML = `<div><span>${T('cart.line', { n: cart.quantity })}</span><span>${fmt(q.subtotalCents)}</span></div>${q.discountCents ? `<div><span>${q.discountLabel}</span><span>− ${fmt(q.discountCents)}</span></div>` : ''}<div><span>${T('cart.shipping')}</span><span>${q.shippingCents ? fmt(q.shippingCents) : T('cart.free')}</span></div><div class="grand"><span>${T('cart.totalNow')}</span><span>${fmt(q.totalCents)}</span></div>`;
       $('[data-sub-amount]').textContent = fmt(q.totalCents);
+      const duties = $('[data-duties-note]'); if (duties) duties.hidden = !q.dutiesMayApply;
+      // iDEAL only makes sense for Dutch bank accounts: hide it outside NL, and move to card if it was selected.
+      const idealWrap = form.querySelector('input[name="method"][value="ideal"]')?.closest('.method');
+      if (idealWrap) { const nl = q.country === 'NL'; idealWrap.hidden = !nl; if (!nl && idealWrap.querySelector('input').checked) { const card = form.querySelector('input[name="method"][value="creditcard"]'); if (card) card.checked = true; } }
       $('[data-pay-label]').textContent = `${cart.mode === 'subscription' ? T('checkout.paySubscribe') : T('checkout.pay')} ${fmt(q.totalCents)}`;
     } catch (e) { $('[data-sum-totals]').innerHTML = `<div class="alert alert-error">${e.message || T('checkout.priceError')}</div>`; }
   };
   $$('[data-mode-btn]').forEach((b) => b.addEventListener('click', () => { cart = { ...cart, mode: b.dataset.modeBtn }; R.writeCart(cart); summary(); sumModeFix(); }));
   $('#f-country').addEventListener('change', summary);
+  // Pre-select the visitor's country (from the edge IP lookup) unless they already typed an address or are retrying an order.
+  const countrySel = $('#f-country');
+  let hasDraftCountry = false;
+  try { hasDraftCountry = !!JSON.parse(sessionStorage.getItem('rynse:checkout-draft') || '{}').country; } catch {}
+  if (!hasDraftCountry && !retryOrder?.retry?.address?.country) {
+    try {
+      const g = await (await fetch('/api/geo', { credentials: 'same-origin' })).json();
+      if (g.country && countrySel.querySelector(`option[value="${g.country}"]`)) countrySel.value = g.country;
+    } catch {}
+  }
   summary();
   R.track('begin_checkout', { currency: 'EUR', items: [{ item_id: 'RYNSE-40', quantity: cart.quantity, item_variant: cart.mode }] });
 
@@ -48,8 +62,8 @@
   const DRAFT = 'rynse:checkout-draft';
   try { const d = JSON.parse(sessionStorage.getItem(DRAFT) || '{}'); for (const [k, v] of Object.entries(d)) { const el = form.elements[k]; if (el && el.type !== 'checkbox' && el.type !== 'radio') el.value = v; } } catch {}
   if (retryOrder?.retry) { const a = retryOrder.retry.address || {}; const fill = (k, v) => { if (v && form.elements[k] && !form.elements[k].value) form.elements[k].value = v; }; fill('email', retryOrder.retry.email); fill('name', a.name); fill('street', a.street); fill('postalCode', a.postalCode); fill('city', a.city); if (a.country) form.elements.country.value = a.country; }
-  // Default payment method by language: iDEAL for Dutch visitors, card elsewhere.
-  if (R.locale !== 'nl') { const card = form.querySelector('input[name="method"][value="creditcard"]'); if (card) card.checked = true; }
+  // Default payment method: iDEAL only when shipping to NL, card elsewhere (summary() keeps this in sync with the country).
+  if ($('#f-country').value !== 'NL') { const card = form.querySelector('input[name="method"][value="creditcard"]'); if (card) card.checked = true; }
   // Subscription reminder right above the Pay button (the full terms are in the summary).
   const subConfirm = $('[data-sub-confirm]');
   const sumModeFix = () => { if (subConfirm) subConfirm.hidden = cart.mode !== 'subscription'; };

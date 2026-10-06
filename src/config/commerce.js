@@ -13,6 +13,8 @@
  * Money is handled in integer cents to avoid floating point errors.
  */
 
+import { ALL_COUNTRIES, EU, EUROPE_OTHER } from './countries.js';
+
 const env = (name, fallback) => {
   const v = process.env[name];
   return v === undefined || v === '' ? fallback : v;
@@ -32,6 +34,7 @@ const envPct = (name) => {
   if (!Number.isFinite(n) || n < 0 || n > 100) throw new Error(`Environment variable ${name} must be a percentage between 0 and 100, got "${v}"`);
   return n;
 };
+const envList = (name) => env(name, '').split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
 const envBool = (name, fallback) => {
   const v = env(name, undefined);
   if (v === undefined) return fallback;
@@ -107,16 +110,34 @@ export const product = {
 // Shipping — PLACEHOLDERS until logistics are final
 // ---------------------------------------------------------------------------
 export const shipping = {
-  countries: ['NL', 'BE', 'DE'],
+  // Worldwide shipping. Every country in ALL_COUNTRIES can be chosen at checkout, minus RYNSE_EXCLUDED_COUNTRIES (comma-separated ISO codes, e.g. sanctioned destinations).
+  countries: ALL_COUNTRIES.filter((c) => !envList('RYNSE_EXCLUDED_COUNTRIES').includes(c)),
+  // Default country in the checkout per locale (visitors can change it; the checkout also pre-selects the IP country when known).
   defaultCountry: 'NL',
-  costCents: envInt('RYNSE_SHIPPING_CENTS', placeholder('RYNSE_SHIPPING_CENTS', 395, 'Shipping cost in cents')),
-  // Orders at or above this subtotal ship free. Set to 0 to always ship free, or a very high number to disable.
-  freeShippingThresholdCents: envInt('RYNSE_FREE_SHIPPING_THRESHOLD_CENTS', placeholder('RYNSE_FREE_SHIPPING_THRESHOLD_CENTS', 3000, 'Free shipping threshold in cents')),
-  // Subscriptions ship free by default (configurable).
+  defaultCountryByLocale: { en: 'NL', nl: 'NL', es: 'ES' },
+  // Shipping zones — the first zone whose country list matches wins; 'world' catches everything else.
+  // Each zone has its own rate and free-shipping threshold (PLACEHOLDERS until logistics are final).
+  zones: [
+    { id: 'nl', countries: ['NL'], costCents: envInt('RYNSE_SHIPPING_CENTS', placeholder('RYNSE_SHIPPING_CENTS', 395, 'Shipping cost in cents — Netherlands')), freeFromCents: envInt('RYNSE_FREE_SHIPPING_THRESHOLD_CENTS', placeholder('RYNSE_FREE_SHIPPING_THRESHOLD_CENTS', 3000, 'Free shipping threshold in cents — Netherlands')) },
+    { id: 'europe', countries: [...EU, ...EUROPE_OTHER].filter((c) => c !== 'NL'), costCents: envInt('RYNSE_SHIPPING_EU_CENTS', placeholder('RYNSE_SHIPPING_EU_CENTS', 795, 'Shipping cost in cents — Europe')), freeFromCents: envInt('RYNSE_FREE_SHIPPING_EU_THRESHOLD_CENTS', placeholder('RYNSE_FREE_SHIPPING_EU_THRESHOLD_CENTS', 5000, 'Free shipping threshold in cents — Europe')) },
+    { id: 'world', countries: '*', costCents: envInt('RYNSE_SHIPPING_WORLD_CENTS', placeholder('RYNSE_SHIPPING_WORLD_CENTS', 1495, 'Shipping cost in cents — rest of world')), freeFromCents: envInt('RYNSE_FREE_SHIPPING_WORLD_THRESHOLD_CENTS', placeholder('RYNSE_FREE_SHIPPING_WORLD_THRESHOLD_CENTS', 7500, 'Free shipping threshold in cents — rest of world')) },
+  ],
+  // Subscriptions ship free by default (configurable). Applies in every zone.
   subscriptionShipsFree: envBool('RYNSE_SUBSCRIPTION_SHIPS_FREE', true),
-  deliveryEstimate: env('RYNSE_DELIVERY_ESTIMATE', placeholder('RYNSE_DELIVERY_ESTIMATE', '[delivery time TBD]', 'Delivery time shown in checkout and FAQ, e.g. "1–3 working days"')),
+  deliveryEstimate: env('RYNSE_DELIVERY_ESTIMATE', placeholder('RYNSE_DELIVERY_ESTIMATE', '[delivery time TBD]', 'Delivery time shown in checkout and FAQ, e.g. "NL 1–3 working days, EU 3–7, worldwide 7–14"')),
   returnWindowDays: envInt('RYNSE_RETURN_WINDOW_DAYS', placeholder('RYNSE_RETURN_WINDOW_DAYS', 14, 'Return window in days (EU minimum 14)')),
+  // Customs: orders outside the EU may be subject to import duties/taxes payable by the recipient (shown at checkout + legal pages).
+  dutiesNoteOutsideEu: true,
 };
+
+/** Shipping zone for an ISO country code (never undefined: 'world' catches all). */
+export function zoneFor(country) {
+  return shipping.zones.find((z) => z.countries === '*' || z.countries.includes(country)) || shipping.zones[shipping.zones.length - 1];
+}
+export const isEu = (country) => EU.includes(country);
+// Backwards-compatible aliases (NL rate) used in copy that quotes "from" prices.
+Object.defineProperty(shipping, 'costCents', { get: () => shipping.zones[0].costCents });
+Object.defineProperty(shipping, 'freeShippingThresholdCents', { get: () => shipping.zones[0].freeFromCents });
 
 // ---------------------------------------------------------------------------
 // Subscription — PLACEHOLDERS: frequency and discount not final
@@ -229,12 +250,14 @@ export function publicConfig() {
       facts: product.facts,
     },
     shipping: {
-      costCents: shipping.costCents,
-      freeShippingThresholdCents: shipping.freeShippingThresholdCents,
+      zones: shipping.zones.map((z) => ({ id: z.id, costCents: z.costCents, freeFromCents: z.freeFromCents })),
       subscriptionShipsFree: shipping.subscriptionShipsFree,
-      countries: shipping.countries,
+      worldwide: true,
+      countryCount: shipping.countries.length,
       defaultCountry: shipping.defaultCountry,
+      defaultCountryByLocale: shipping.defaultCountryByLocale,
       deliveryEstimate: shipping.deliveryEstimate,
+      dutiesNoteOutsideEu: shipping.dutiesNoteOutsideEu,
     },
     subscription: { enabled: subscription.enabled, interval: subscription.interval, discountPct: subscription.discountPct, cancelAnytime: subscription.cancelAnytime },
     loyalty: { enabled: loyalty.enabled, levels: loyalty.levels },

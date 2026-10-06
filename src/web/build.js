@@ -149,7 +149,7 @@ ${brand.name} is a direct-to-consumer personal-care brand. It sells one product:
 - One-time purchase of a single pack
 - Subscription: automatic delivery every ${subscription.interval}, cancel anytime; subscribers build a loyalty benefit for every uninterrupted year — the benefit resets when the subscription is cancelled and a new subscription starts again at year 1
 - Payment methods: iDEAL, Apple Pay, Visa, Mastercard (processed by Mollie)
-- Shipping to: ${shipping.countries.join(', ')}
+- Shipping: worldwide (${shipping.countries.length} countries; NL / Europe / rest-of-world rates)
 
 ## Pages
 - [Shop / home](${site.baseUrl}/)

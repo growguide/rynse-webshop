@@ -1,4 +1,5 @@
 import { brand, product, shipping, loyalty } from '../../config/commerce.js';
+import { countryOptions } from '../../config/countries.js';
 import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, payBadges, priceFmt, picture, split, intervalLabel } from './components.js';
 import { layout, organizationLd, breadcrumbLd, faqLd } from './layout.js';
 
@@ -82,8 +83,8 @@ export function renderCheckout({ t, assets }) {
     <div class="form-section"><h2 class="form-title">${esc(t('checkout.delivery'))}</h2>
       <div class="field"><label for="f-name">${esc(t('checkout.name'))}</label><input id="f-name" name="name" autocomplete="name" required minlength="2" maxlength="120"><span class="err">${esc(t('checkout.errName'))}</span></div>
       <div class="field"><label for="f-street">${esc(t('checkout.street'))}</label><input id="f-street" name="street" autocomplete="street-address" required minlength="3" maxlength="160"><span class="err">${esc(t('checkout.errStreet'))}</span></div>
-      <div class="fields-2"><div class="field"><label for="f-postal">${esc(t('checkout.postal'))}</label><input id="f-postal" name="postalCode" autocomplete="postal-code" required minlength="4" maxlength="12"><span class="err">${esc(t('checkout.required'))}</span></div><div class="field"><label for="f-city">${esc(t('checkout.city'))}</label><input id="f-city" name="city" autocomplete="address-level2" required minlength="2" maxlength="80"><span class="err">${esc(t('checkout.required'))}</span></div></div>
-      <div class="field"><label for="f-country">${esc(t('checkout.country'))}</label><select id="f-country" name="country" autocomplete="country">${shipping.countries.map((c) => `<option value="${c}"${c === shipping.defaultCountry ? ' selected' : ''}>${esc(t(`checkout.country.${c}`))}</option>`).join('')}</select></div>
+      <div class="fields-2"><div class="field"><label for="f-postal">${esc(t('checkout.postal'))}</label><input id="f-postal" name="postalCode" autocomplete="postal-code" required minlength="2" maxlength="12"><span class="err">${esc(t('checkout.required'))}</span></div><div class="field"><label for="f-city">${esc(t('checkout.city'))}</label><input id="f-city" name="city" autocomplete="address-level2" required minlength="2" maxlength="80"><span class="err">${esc(t('checkout.required'))}</span></div></div>
+      <div class="field"><label for="f-country">${esc(t('checkout.country'))}</label><select id="f-country" name="country" autocomplete="country" data-default-country="${shipping.defaultCountryByLocale[t.locale] || shipping.defaultCountry}">${countryOptions(shipping.countries, t.locale).map(([c, name]) => `<option value="${c}"${c === (shipping.defaultCountryByLocale[t.locale] || shipping.defaultCountry) ? ' selected' : ''}>${esc(name)}</option>`).join('')}</select><p class="small muted" data-duties-note hidden>${esc(t('checkout.duties'))}</p></div>
     </div>
     <div class="form-section"><h2 class="form-title">${esc(t('checkout.payment'))}</h2>
       <div class="methods" role="radiogroup" aria-label="${esc(t('checkout.methodAria'))}">
@@ -156,7 +157,7 @@ export function renderLegal({ t, assets }) {
   const note = `<p class="alert alert-info">${t('legal.draft')}</p>`;
   const vars = {
     company, date: ph(t('legal.ph.date')), cookies: t.href('/cookies'), carrier: ph(t('legal.ph.carrier')), emailProvider: ph(t('legal.ph.emailProvider')), hosting: ph(t('legal.ph.hosting')),
-    email: esc(brand.supportEmail), vendors: ph(t('legal.ph.vendors')), interval: esc(intervalLabel(t)), countries: esc(shipping.countries.join(', ')), estimate: ph(shipping.deliveryEstimate),
+    email: esc(brand.supportEmail), vendors: ph(t('legal.ph.vendors')), interval: esc(intervalLabel(t)), countries: esc(t('shipping.worldwide')), estimate: ph(shipping.deliveryEstimate), euCost: esc(priceFmt(shipping.zones[1].costCents, t)), euThreshold: esc(priceFmt(shipping.zones[1].freeFromCents, t)), worldCost: esc(priceFmt(shipping.zones[2].costCents, t)), worldThreshold: esc(priceFmt(shipping.zones[2].freeFromCents, t)),
     days: String(shipping.returnWindowDays), shipping: t.href('/shipping-returns'), localLaw: ph(t('legal.ph.localLaw')), cost: esc(priceFmt(shipping.costCents, t)),
     threshold: esc(priceFmt(shipping.freeShippingThresholdCents, t)), subFree: shipping.subscriptionShipsFree ? t('legal.shipping.subFree') : '', returnCost: ph(t('legal.ph.returnCost')),
   };

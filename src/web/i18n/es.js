@@ -149,7 +149,7 @@ export default {
   'faq.q7': '¿Cómo puedo pagar?',
   'faq.a7': 'Con iDEAL, Apple Pay y tarjeta de crédito (Visa, Mastercard). Los pagos los procesa de forma segura Mollie.',
   'faq.q8': '¿Cuánto tarda la entrega y cuánto cuesta el envío?',
-  'faq.a8': 'Entrega: {estimate}. El envío cuesta {cost} y es gratis a partir de {threshold}{subFree}. Actualmente enviamos a {countries}.',
+  'faq.a8': 'Entrega: {estimate}. Enviamos a todo el mundo. El envío cuesta {cost} en Países Bajos (gratis a partir de {threshold}), {euCost} en el resto de Europa (gratis a partir de {euThreshold}) y {worldCost} en el resto del mundo (gratis a partir de {worldThreshold}){subFree}. Los pedidos fuera de la UE pueden estar sujetos a aranceles de importación, a cargo del destinatario.',
   'faq.a8.subFree': ' — las suscripciones siempre tienen envío gratis',
   'faq.q9': '¿Puedo devolver mi pedido?',
   'faq.a9': 'Puedes devolver un paquete sin abrir en un plazo de {days} días desde la entrega. Consulta Envíos y devoluciones para los detalles.',
@@ -213,9 +213,6 @@ export default {
   'checkout.city': 'Ciudad',
   'checkout.required': 'Obligatorio.',
   'checkout.country': 'País',
-  'checkout.country.NL': 'Países Bajos',
-  'checkout.country.BE': 'Bélgica',
-  'checkout.country.DE': 'Alemania',
   'checkout.payment': 'Pago',
   'checkout.method.ideal': 'iDEAL',
   'checkout.method.applepay': 'Apple Pay',
@@ -268,11 +265,11 @@ export default {
 <h2>2. Productos</h2><p>RYNSE vende toallitas limpiadoras para la higiene personal. Las descripciones de este sitio web son correctas según nuestro leal saber; las imágenes pueden diferir ligeramente del producto entregado.</p>
 <h2>3. Precios y pago</h2><p>Todos los precios son en euros e incluyen IVA. Los gastos de envío se muestran antes de pagar. El pago se realiza por adelantado con iDEAL, Apple Pay o tarjeta de crédito, procesado por Mollie. Un pedido solo es definitivo cuando el pago se ha confirmado.</p>
 <h2>4. Suscripciones</h2><p>Con una suscripción nos autorizas (mediante un mandato de Mollie) a cobrar el precio de la suscripción cada {interval} y a enviar un paquete tras cada pago correcto. El precio, la frecuencia y el importe se muestran antes de confirmar. Puedes cancelar en cualquier momento desde tu cuenta; la cancelación surte efecto de inmediato para todas las entregas y pagos futuros. Las ventajas de fidelidad solo se aplican mientras una suscripción está activa; tras la cancelación el estado de fidelidad se reinicia y una nueva suscripción empieza de nuevo en el año 1. Si un pago recurrente falla, Mollie puede reintentarlo; tras fallos repetidos la suscripción finaliza.</p>
-<h2>5. Entrega</h2><p>Entregamos en {countries}. Plazo estimado: {estimate}. El riesgo se transmite a ti en el momento de la entrega.</p>
+<h2>5. Entrega</h2><p>Entregamos en todo el mundo. Plazo estimado: {estimate}. El riesgo pasa a ti en la entrega. Los aranceles e impuestos de importación para entregas fuera de la UE corren a cargo del destinatario.</p>
 <h2>6. Derecho de desistimiento</h2><p>Como consumidor puedes cancelar tu pedido en un plazo de {days} días desde su recepción, sin indicar motivo, siempre que el paquete esté sin abrir (por razones de higiene los paquetes abiertos quedan excluidos, conforme a la normativa europea de consumo). Consulta <a href="{shipping}">Envíos y devoluciones</a>.</p>
 <h2>7. Reclamaciones</h2><p>Escribe a {email}. Respondemos en 14 días. Los consumidores de la UE también pueden usar la <a href="https://ec.europa.eu/consumers/odr" rel="noopener" target="_blank">plataforma europea de resolución de litigios</a>.</p>
 <h2>8. Legislación aplicable</h2><p>Se aplica la legislación neerlandesa. {localLaw}</p>`,
-  'legal.shipping': `<h2>Envíos</h2><ul><li>Países: {countries}.</li><li>Coste: {cost} por pedido; gratis a partir de {threshold}.{subFree}</li><li>Plazo de entrega: {estimate}.</li><li>Transportista: {carrier}. Recibirás un código de seguimiento por e-mail cuando tu pedido se envíe.</li></ul>
+  'legal.shipping': `<h2>Envío</h2><ul><li>Enviamos a todo el mundo.</li><li>Países Bajos: {cost} por pedido, gratis a partir de {threshold}.</li><li>Resto de Europa: {euCost} por pedido, gratis a partir de {euThreshold}.</li><li>Resto del mundo: {worldCost} por pedido, gratis a partir de {worldThreshold}.{subFree}</li><li>Plazo de entrega: {estimate}.</li><li>Transportista: {carrier}. Recibirás un código de seguimiento por correo cuando se envíe tu pedido.</li><li>Fuera de la UE, la aduana local puede cobrar aranceles e impuestos; corren a cargo del destinatario y no están incluidos en nuestros precios.</li></ul>
 <h2>Devoluciones</h2><ul><li>Puedes devolver un paquete sin abrir en un plazo de {days} días desde la entrega.</li><li>Los paquetes abiertos no se pueden devolver por razones de higiene.</li><li>Escribe a {email} con tu número de pedido; te enviaremos las instrucciones. {returnCost}</li><li>Los reembolsos se hacen al método de pago original en un plazo de 14 días desde que recibimos la devolución.</li></ul>
 <h2>Entrega dañada o incorrecta</h2><p>Envía una foto a {email} en un plazo de 7 días y sustituiremos el paquete sin coste.</p>`,
   'legal.shipping.subFree': ' Las suscripciones siempre tienen envío gratis.',
@@ -393,4 +390,6 @@ export default {
   'js.lang.dismiss': 'No, gracias',
   'hero.options': 'Elige compra única o suscripción ↓',
   'checkout.subConfirm': 'Al pagar inicias una suscripción: entrega y cobro cada {interval}, cancelable cuando quieras desde tu cuenta.',
+  'shipping.worldwide': 'a todo el mundo',
+  'checkout.duties': 'Envío fuera de la UE: la aduana local puede cobrar aranceles o impuestos de importación en la entrega.',
 };

@@ -299,3 +299,21 @@ test('magic link: GET shows a page, only the POST consumes the token (scanner-sa
   const again = await api('POST', '/api/auth/consume', new URLSearchParams({ token, l: 'nl' }));
   assert.equal(again.headers.get('location'), '/nl/account?error=link');
 });
+
+test('worldwide shipping: zone rates, duties flag, excluded countries, localized country list', async () => {
+  const nl = await api('POST', '/api/quote', { mode: 'one_time', quantity: 1, country: 'NL' });
+  const de = await api('POST', '/api/quote', { mode: 'one_time', quantity: 1, country: 'DE' });
+  const us = await api('POST', '/api/quote', { mode: 'one_time', quantity: 1, country: 'US' });
+  const jp = await api('POST', '/api/quote', { mode: 'one_time', quantity: 6, country: 'JP' });
+  assert.equal(nl.data.shippingZone, 'nl'); assert.equal(nl.data.shippingCents, 395); assert.equal(nl.data.dutiesMayApply, false);
+  assert.equal(de.data.shippingZone, 'europe'); assert.equal(de.data.shippingCents, 795); assert.equal(de.data.dutiesMayApply, false);
+  assert.equal(us.data.shippingZone, 'world'); assert.equal(us.data.shippingCents, 1495); assert.equal(us.data.dutiesMayApply, true);
+  assert.equal(jp.data.shippingCents, 0, 'free shipping above the world threshold');
+  const subUs = await api('POST', '/api/quote', { mode: 'subscription', quantity: 1, country: 'US' });
+  assert.equal(subUs.data.shippingCents, 0, 'subscriptions ship free in every zone');
+  const bad = await api('POST', '/api/quote', { mode: 'one_time', quantity: 1, country: 'ZZ' }); assert.equal(bad.status, 400);
+  // A paid order to Brazil snapshots the zone.
+  const br = await checkout('one_time', 1, { email: 'br@example.com', address: { street: 'Rua A 1', postalCode: '01000-000', city: 'São Paulo', country: 'BR' }, method: 'creditcard' });
+  await emu().setStatus(br.paymentId, 'paid'); await webhook(br.paymentId);
+  const o = await order(br.orderNumber); assert.equal(o.total_cents, 1500 + 1495); assert.equal(o.pricing_snapshot.shippingZone, 'world');
+});

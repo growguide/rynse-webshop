@@ -195,7 +195,7 @@ All findings were implemented after the review and verified by `npm test` (27 sc
 | 19 | `/api/geo` on every page view | Fixed | suggestion only outside production (Vercel middleware handles it there) |
 | 20 | "Pause" / usage claims | Fixed | copy removed in all three languages |
 | 21 | Brand-term consistency | Fixed | "Get RYNSE" and "RYNSE — 40 Wipes" kept verbatim in NL/ES; NL "Je bent klaar." replaced |
-| 22 | ES locale vs shipping; iDEAL default | Partly | card is the default method unless locale is `nl`; shipping countries remain a config decision (see `docs/CONFIGURATION.md`) |
+| 22 | ES locale vs shipping; iDEAL default | Fixed | shipping is worldwide (zones NL / Europe / world, `src/config/countries.js`); iDEAL only shown for NL addresses, card default elsewhere; IP country pre-selected |
 | 23 | Security hygiene | Fixed | constant-time cron/admin compare, CSP header, `[hidden]` hardening; session revocation still a known limitation (short-lived HMAC sessions) |
 | 24 | `addInterval` overflow | Fixed | month clamp |
 | 25 | Admin id/ILIKE | Fixed | uuid validation, escaped ILIKE |

@@ -109,7 +109,7 @@ export const intervalLabel = (t) => i18nInterval(t.locale, subscription.interval
 export function faqItems(t) {
   const n = product.wipesPerPack;
   const interval = intervalLabel(t);
-  const vars = { n, interval, estimate: shipping.deliveryEstimate, cost: priceFmt(shipping.costCents, t), threshold: priceFmt(shipping.freeShippingThresholdCents, t), subFree: shipping.subscriptionShipsFree ? t('faq.a8.subFree') : '', countries: shipping.countries.join(', '), days: shipping.returnWindowDays };
+  const vars = { n, interval, estimate: shipping.deliveryEstimate, cost: priceFmt(shipping.costCents, t), threshold: priceFmt(shipping.freeShippingThresholdCents, t), subFree: shipping.subscriptionShipsFree ? t('faq.a8.subFree') : '', countries: t('shipping.worldwide'), euCost: priceFmt(shipping.zones[1].costCents, t), euThreshold: priceFmt(shipping.zones[1].freeFromCents, t), worldCost: priceFmt(shipping.zones[2].costCents, t), worldThreshold: priceFmt(shipping.zones[2].freeFromCents, t), days: shipping.returnWindowDays };
   return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [t(`faq.q${i}`, vars), t(`faq.a${i}`, vars)]);
 }
 

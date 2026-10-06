@@ -22,7 +22,9 @@ Preview deployments build with placeholders and show a yellow dev banner.
 | Return window | `RYNSE_RETURN_WINDOW_DAYS` | 14 | FAQ, legal |
 | Legal entity / address / KvK / VAT | `RYNSE_LEGAL_NAME`, `RYNSE_LEGAL_ADDRESS`, `RYNSE_KVK`, `RYNSE_VAT` | `[… TBD]` | footer, legal pages, contact |
 | Support e-mail | `RYNSE_SUPPORT_EMAIL` | hello@getrynse.example | footer, e-mails, contact |
-| Ship-to countries | edit `shipping.countries` in `commerce.js` | NL, BE, DE | checkout |
+| Ship-to countries | worldwide by default; exclude with `RYNSE_EXCLUDED_COUNTRIES=XX,YY` | all countries | checkout |
+| Shipping rate Europe (ex-NL) | `RYNSE_SHIPPING_EU_CENTS` / `RYNSE_FREE_SHIPPING_EU_THRESHOLD_CENTS` | €7.95 / free from €50 | checkout, FAQ, legal |
+| Shipping rate rest of world | `RYNSE_SHIPPING_WORLD_CENTS` / `RYNSE_FREE_SHIPPING_WORLD_THRESHOLD_CENTS` | €14.95 / free from €75 | checkout, FAQ, legal |
 
 Loyalty rule (implemented in `src/server/loyalty.js`, tested in `tests/payments.test.js`):
 level = full uninterrupted years + 1; exists only while the subscription is active;
@@ -76,6 +78,6 @@ Browser e2e: `npm run test:e2e` (Playwright, 156 checks; purchase flows in EN/NL
 
 ## 7. Known limitations / decisions still open
 
-- **Shipping countries vs. Spanish locale.** The site is served in Spanish for ES + Latin America, but `shipping.countries` is NL/BE/DE. Either add ES (and set rates) in `src/config/commerce.js`, or accept that Spanish visitors see the shop but cannot check out to their country (the checkout only lists shipping countries).
+- **Worldwide shipping.** Three zones (`nl`, `europe` = EU + EEA/CH/UK/Balkans, `world`) with their own rate and free-shipping threshold, all placeholders until logistics are final. Prices are in EUR everywhere (Mollie settles in EUR; cards convert). Outside the EU the checkout, FAQ and legal pages state that import duties/taxes are payable by the recipient (DDU); switch to DDP only if the carrier contract supports it. Exclude destinations you cannot serve (sanctions, carrier limits) with `RYNSE_EXCLUDED_COUNTRIES`. iDEAL is only offered when shipping to NL; card is the default elsewhere. The checkout pre-selects the visitor's IP country.
 - **Session revocation.** Account sessions are short-lived signed cookies; there is no server-side revocation list. Rotate `SESSION_SECRET` to invalidate all sessions at once.
 - **Mollie test mode.** Recurring test payments and subscription charges are finalised through Mollie's dashboard/`changePaymentState`; the emulator covers these automatically.

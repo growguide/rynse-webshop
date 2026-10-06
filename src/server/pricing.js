@@ -1,6 +1,6 @@
 // Server-side pricing. The browser only ever sends {mode, quantity}; every amount
 // is computed here from src/config/commerce.js and snapshotted on the order.
-import { product, shipping, subscription, loyalty, applyPct } from '../config/commerce.js';
+import { product, shipping, subscription, loyalty, applyPct, zoneFor, isEu } from '../config/commerce.js';
 import { HttpError } from './http.js';
 import { discountPctForLevel } from './loyalty.js';
 
@@ -40,9 +40,10 @@ export function quote({ mode, quantity, loyaltyLevel = 1, country = shipping.def
   }
 
   const afterDiscount = subtotalCents - discountCents;
-  let shippingCents = shipping.costCents;
+  const zone = zoneFor(country);
+  let shippingCents = zone.costCents;
   if (mode === 'subscription' && shipping.subscriptionShipsFree) shippingCents = 0;
-  else if (afterDiscount >= shipping.freeShippingThresholdCents) shippingCents = 0;
+  else if (afterDiscount >= zone.freeFromCents) shippingCents = 0;
 
   const totalCents = afterDiscount + shippingCents;
   // Prices are VAT-inclusive (consumer pricing); VAT portion for the invoice:
@@ -63,12 +64,17 @@ export function quote({ mode, quantity, loyaltyLevel = 1, country = shipping.def
     vatRatePct: product.vatRatePct,
     loyaltyLevel: mode === 'subscription' ? loyaltyLevel : null,
     interval: mode === 'subscription' ? subscription.interval : null,
-    freeShippingThresholdCents: shipping.freeShippingThresholdCents,
+    freeShippingThresholdCents: zone.freeFromCents,
+    country,
+    shippingZone: zone.id,
+    dutiesMayApply: shipping.dutiesNoteOutsideEu && !isEu(country),
     snapshot: {
       sku: product.sku,
       priceCents: product.priceCents,
-      shippingCents: shipping.costCents,
-      freeShippingThresholdCents: shipping.freeShippingThresholdCents,
+      country,
+      shippingZone: zone.id,
+      shippingCents: zone.costCents,
+      freeShippingThresholdCents: zone.freeFromCents,
       subscriptionDiscountPct: subscription.discountPct,
       loyaltyLevels: loyalty.levels,
       interval: subscription.interval,
