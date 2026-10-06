@@ -18,5 +18,8 @@
   "videos": {
     "hero-desktop": { "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3DytKDKLeumAwxtbgYGK2ieoOlU/hf_20261006_095302_fb88caf3-6574-4676-b64b-e91a861f5176.mp4", "frames": 96, "width": 1440, "quality": 70, "out": "d" },
     "hero-mobile":  { "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3DytKDKLeumAwxtbgYGK2ieoOlU/hf_20261006_095303_e46c6713-db10-44ab-b787-a5031127a28e.mp4", "frames": 64, "width": 720, "quality": 68, "out": "m" }
+  },
+  "clips": {
+    "hero-drop": { "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3DytKDKLeumAwxtbgYGK2ieoOlU/hf_20261006_135113_b75a8220-aed3-4bde-a351-c5923fbcb4d7.mp4", "width": 1080, "crf": 22, "note": "Wan 3.0, start=empty studio, end=packshot. Alternative (FLUX 3, dust-puff landing): hf_20261006_135112_a5bb79bb-61a5-4554-9acd-3e5533516394.mp4" }
   }
 }
