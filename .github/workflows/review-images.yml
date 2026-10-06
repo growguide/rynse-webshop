@@ -1,0 +1,46 @@
+name: Fetch images for review
+
+# Helper for the build session (the workspace cannot reach the Higgsfield CDN):
+# downloads the given URLs, downsizes them and commits JPEG previews to the asset-review branch.
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: Comma-separated image URLs
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --quiet "pillow>=11.2"
+      - name: Download and downsize
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          mkdir -p review
+          python3 - <<'PY'
+          import os, io, urllib.request, hashlib
+          from PIL import Image
+          for i, u in enumerate([x.strip() for x in os.environ['URLS'].split(',') if x.strip()]):
+              data = urllib.request.urlopen(u, timeout=60).read()
+              im = Image.open(io.BytesIO(data)).convert('RGB'); im.thumbnail((1400, 1400))
+              name = hashlib.sha1(u.encode()).hexdigest()[:10]
+              im.save(f'review/{i}-{name}.jpg', quality=85)
+              print(i, u, im.size)
+          PY
+      - name: Commit to asset-review branch
+        run: |
+          git config user.name "rynse-assets-bot"
+          git config user.email "assets-bot@users.noreply.github.com"
+          git checkout -B asset-review
+          git add review
+          git commit -m "review images" || true
+          git push -f origin asset-review
