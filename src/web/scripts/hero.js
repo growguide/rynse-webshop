@@ -7,8 +7,8 @@
   if (!stage) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Drop-in clip: plays exactly once when the hero is on screen, then freezes; the final frame is
-  // cross-faded into the real packshot so the resting composition is pixel-identical to the still.
+  // Drop-in clip: plays exactly once when the hero is on screen, then simply stays paused on its last
+  // frame (no swap, no fade). The still image is only shown when the clip cannot play.
   const video = stage.querySelector('[data-hero-video]');
   const pack = stage.querySelector('.hero-pack');
   if (video && pack) {
