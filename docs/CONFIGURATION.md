@@ -56,17 +56,26 @@ discount do not stack — the higher one applies.
 - Region `fra1` is set for the function (EU data). Cron: daily 04:17 UTC.
 - Add the environment variables above (Production + Preview). Previews can keep the emulator (`PAYMENT_PROVIDER=emulator`) for demos: the fake checkout lives at `/api/emulator/checkout`.
 - Custom domain → set `SITE_URL` to it.
+- `cleanUrls: true` serves `/faq`, `/checkout`, `/nl/faq` … from the built `.html` files; `/order/:number` (and the `/nl/`, `/es/` variants) are rewritten to the order page, which reads the number and its access token (`?t=`) client-side.
+- Language by IP: `middleware.js` (Vercel Edge) redirects first visits based on `x-vercel-ip-country` — NL → `/nl/`, Spanish-speaking countries → `/es/`, everything else stays English. A manual choice (footer/nav switcher) sets the `rynse_lang` cookie, which always wins; bots are never redirected and every locale has its own canonical + hreflang.
+- Order and account links are per order: `/order/RY-…?t=<token>` (token stored in `orders.access_token`, also used for the retry/cancel flow). Magic-link sign-in opens a page that posts the token once (scanner-safe).
 
 ## 5. Test scenarios (brief §44)
 
-Automated against the emulator: `npm test` (21 tests: paid/canceled/failed/pending/expired iDEAL & card & Apple Pay, duplicate webhooks, refunds, first & recurring subscription payments, failed renewals, cancellation, loyalty reset, re-subscribe at year 1, late webhook, page refresh, forged webhook, CSRF, rate limits, frontend-amount tampering).
+Automated against the emulator: `npm test` (27 tests, incl. i18n and the QA-fix regression suite: paid/canceled/failed/pending/expired iDEAL & card & Apple Pay, duplicate webhooks, refunds, first & recurring subscription payments, failed renewals, cancellation, loyalty reset, re-subscribe at year 1, late webhook, page refresh, forged webhook, CSRF, rate limits, frontend-amount tampering).
 
 Against Mollie test mode (manual, once per release): run the same list through the hosted test checkout; recurring test payments are finalised via Mollie's `changePaymentState` link; test subscriptions auto-cancel after 10 payments.
 
-Browser e2e: `npm run test:e2e` (Playwright; mobile + desktop purchase flows, 7 viewports, links, SEO).
+Browser e2e: `npm run test:e2e` (Playwright, 156 checks; purchase flows in EN/NL/ES, 7 viewports, language switching + geo suggestion, links, SEO).
 
 ## 6. Replacing assets
 
 - Logo: `src/web/assets/brand/rynse-wordmark.svg` (vector, traced from the supplied PDF) — the nav, footer and sachet component read it; `rynse-logo-full.svg` includes the tagline.
 - Product / lifestyle images & hero frames: see `docs/HIGGSFIELD.md` (manifest-driven, no code changes).
 - Payment icons: `src/web/assets/payment/` (official files from Mollie's open-source plugin; see `SOURCES.md` there).
+
+## 7. Known limitations / decisions still open
+
+- **Shipping countries vs. Spanish locale.** The site is served in Spanish for ES + Latin America, but `shipping.countries` is NL/BE/DE. Either add ES (and set rates) in `src/config/commerce.js`, or accept that Spanish visitors see the shop but cannot check out to their country (the checkout only lists shipping countries).
+- **Session revocation.** Account sessions are short-lived signed cookies; there is no server-side revocation list. Rotate `SESSION_SECRET` to invalidate all sessions at once.
+- **Mollie test mode.** Recurring test payments and subscription charges are finalised through Mollie's dashboard/`changePaymentState`; the emulator covers these automatically.

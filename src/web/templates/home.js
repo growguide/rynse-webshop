@@ -32,6 +32,7 @@ export function renderHome({ t, assets, images }) {
         <a class="btn btn-primary" href="#buy" data-scroll-buy>${esc(t('cta.get'))}</a>
         <div class="hero-price">${priceFmt(product.priceCents, t)}<small>${esc(t('product.inclVat'))}</small>${placeholderFlag('RYNSE_PRICE_CENTS')}</div>
       </div>
+      <a class="hero-options link" href="#buy" data-scroll-options>${esc(t('hero.options'))}</a>
     </div>
     <div class="hero-scroll-hint">${esc(t('hero.scroll'))}</div>
   </div>
@@ -113,6 +114,6 @@ export function renderHome({ t, assets, images }) {
     main,
     assets,
     scripts: [assets.heroJs],
-    jsonLd: [organizationLd(t), websiteLd(t), productLd(t), faqLd(faqs)],
+    jsonLd: [organizationLd(t), websiteLd(t), productLd(t)],
   });
 }

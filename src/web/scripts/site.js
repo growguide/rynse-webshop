@@ -75,13 +75,26 @@
     $('[data-consent-reject]')?.addEventListener('click', () => { setConsent('denied'); banner.classList.remove('is-visible'); });
   }
 
+  // ---------- focus trap for dialogs (drawer, menu) ----------
+  const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const trapFocus = (container) => (e) => {
+    if (e.key !== 'Tab') return;
+    const items = $$(FOCUSABLE, container).filter((el) => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  const setInert = (open, except) => { ['#main', '#nav', '.footer', '[data-sticky]'].forEach((sel) => { const el = $(sel); if (el && el !== except) { if (open) el.setAttribute('inert', ''); else el.removeAttribute('inert'); } }); };
+
   // ---------- nav ----------
   const nav = $('#nav');
   const onScroll = () => nav && nav.classList.toggle('is-scrolled', window.scrollY > 24);
   onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
   const menu = $('#menu');
   const menuBtn = $('[data-menu-open]');
-  const openMenu = (open) => { menu.classList.toggle('is-open', open); menuBtn.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; if (open) $('a', menu)?.focus(); else menuBtn.focus(); };
+  const menuTrap = menu ? trapFocus(menu) : null;
+  const openMenu = (open) => { menu.classList.toggle('is-open', open); menuBtn.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; setInert(open); if (open) { menu.addEventListener('keydown', menuTrap); $('a', menu)?.focus(); } else { menu.removeEventListener('keydown', menuTrap); menuBtn.focus(); } };
   menuBtn?.addEventListener('click', () => openMenu(true));
   $('[data-menu-close]')?.addEventListener('click', () => openMenu(false));
   $$('a', menu || document.createElement('div')).forEach((a) => a.addEventListener('click', () => openMenu(false)));
@@ -95,11 +108,12 @@
   const drawer = $('[data-cart]');
   const backdrop = $('[data-cart-backdrop]');
   let lastFocus = null;
+  const drawerTrap = drawer ? trapFocus(drawer) : null;
   const openCart = (open) => {
     if (!drawer) return;
     drawer.classList.toggle('is-open', open); backdrop.classList.toggle('is-open', open);
-    drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : '';
-    if (open) { lastFocus = document.activeElement; renderCart(); $('[data-cart-close]', drawer)?.focus(); track('view_cart', cartParams()); } else lastFocus?.focus?.();
+    drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; setInert(open);
+    if (open) { lastFocus = document.activeElement; renderCart(); drawer.addEventListener('keydown', drawerTrap); $('[data-cart-close]', drawer)?.focus(); track('view_cart', cartParams()); } else { drawer.removeEventListener('keydown', drawerTrap); lastFocus?.focus?.(); }
   };
   $$('[data-cart-open]').forEach((b) => b.addEventListener('click', () => openCart(true)));
   $('[data-cart-close]')?.addEventListener('click', () => openCart(false));
@@ -110,8 +124,9 @@
   const getQuote = async (mode, quantity) => {
     const key = `${mode}:${quantity}`;
     if (quoteCache.has(key)) return quoteCache.get(key);
-    const p = fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, quantity }) }).then((r) => r.json());
+    const p = fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode, quantity }) }).then((r) => { if (!r.ok) throw new Error('quote failed'); return r.json(); });
     quoteCache.set(key, p);
+    p.catch(() => quoteCache.delete(key)); // never memoise a failure
     return p;
   };
   const cartParams = () => { const c = readCart(); return c ? { currency: CFG.currency, value: (CFG.priceCents * c.quantity) / 100, items: [{ item_id: 'RYNSE-40', item_name: 'RYNSE — 40 Wipes', quantity: c.quantity, price: CFG.priceCents / 100, item_variant: c.mode }] } : {}; };
@@ -129,7 +144,7 @@
       <div class="mode-switch" role="group" aria-label="${T('cart.modeAria')}"><button type="button" data-cart-mode="one_time" aria-pressed="${cart.mode === 'one_time'}">${T('cart.oneTimeBtn')}</button><button type="button" data-cart-mode="subscription" aria-pressed="${cart.mode === 'subscription'}">${T('cart.subscribeBtn')}</button></div>
       ${cart.mode === 'subscription' ? `<p class="small muted">${T('cart.subNote', { interval: CFG.interval })}</p>` : ''}`;
     foot.hidden = false;
-    $$('[data-cart-qty]', body).forEach((b) => b.addEventListener('click', () => { const q = Math.max(1, Math.min(10, cart.quantity + Number(b.dataset.cartQty))); writeCart({ ...cart, quantity: q }); }));
+    $$('[data-cart-qty]', body).forEach((b) => b.addEventListener('click', () => { const q = Math.max(1, Math.min(CFG.maxQuantity || 10, cart.quantity + Number(b.dataset.cartQty))); writeCart({ ...cart, quantity: q }); }));
     $('[data-cart-remove]', body)?.addEventListener('click', () => { track('remove_from_cart', cartParams()); writeCart(null); });
     $$('[data-cart-mode]', body).forEach((b) => b.addEventListener('click', () => { if (b.dataset.cartMode !== cart.mode) { writeCart({ ...cart, mode: b.dataset.cartMode }); if (b.dataset.cartMode === 'subscription') track('subscription_selection', { quantity: cart.quantity }); } }));
     try {
@@ -148,7 +163,7 @@
       out.textContent = qty; if (note) note.hidden = mode() !== 'subscription';
       try { const q = await getQuote(mode(), qty); const price = $('[data-price]', panel); if (price) price.textContent = fmt(q.subtotalCents - q.discountCents); } catch {}
     };
-    $$('[data-qty]', panel).forEach((b) => b.addEventListener('click', () => { qty = Math.max(1, Math.min(10, qty + Number(b.dataset.qty))); refresh(); }));
+    $$('[data-qty]', panel).forEach((b) => b.addEventListener('click', () => { qty = Math.max(1, Math.min(CFG.maxQuantity || 10, qty + Number(b.dataset.qty))); refresh(); }));
     $$('input[type=radio]', panel).forEach((r) => r.addEventListener('change', () => { refresh(); if (mode() === 'subscription') track('subscription_selection', { quantity: qty }); track('select_item', { item_variant: mode() }); }));
     $('[data-add]', panel)?.addEventListener('click', () => {
       const cart = { mode: mode(), quantity: qty };
@@ -171,7 +186,12 @@
   }
 
   // ---------- smooth "Get RYNSE" scroll on home ----------
-  $('[data-scroll-buy]')?.addEventListener('click', (e) => { e.preventDefault(); buy?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('[data-scroll-buy]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const cart = readCart() || { mode: 'one_time', quantity: 1 };
+    writeCart(cart); track('add_to_cart', cartParams()); openCart(true);
+  });
+  $('[data-scroll-options]')?.addEventListener('click', (e) => { e.preventDefault(); buy?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
   // ---------- reveals ----------
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -186,7 +206,7 @@
   $$('[data-lang-select]').forEach((sel) => sel.addEventListener('change', () => { setLang(sel.value); location.assign(pathFor(sel.value)); }));
   const hasLangCookie = /(^|; )rynse_lang=/.test(document.cookie);
   const suggest = $('[data-lang-suggest]');
-  if (suggest && !hasLangCookie && (CFG.locale || 'en') === 'en' && !sessionStorage.getItem('rynse:lang-suggest')) {
+  if (suggest && !hasLangCookie && (CFG.locale || 'en') === 'en' && CFG.env !== 'production' && !sessionStorage.getItem('rynse:lang-suggest')) {
     // Vercel's middleware normally redirects before the page loads; this is the fallback when it did not run.
     fetch('/api/geo').then((r) => r.json()).then((g) => {
       if (!g.locale || g.locale === 'en') return;

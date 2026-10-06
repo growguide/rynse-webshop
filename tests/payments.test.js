@@ -22,7 +22,7 @@ test('2. canceled iDEAL payment → canceled, retry offered, nothing shipped', a
   const { orderNumber, paymentId } = await checkout();
   await emu().setStatus(paymentId, 'canceled'); await webhook(paymentId);
   const o = await order(orderNumber); assert.equal(o.payment_status, 'canceled');
-  const s = await orderStatus(orderNumber); assert.equal(s.data.order.retryUrl, `/checkout?retry=${orderNumber}`);
+  const s = await orderStatus(orderNumber); assert.match(s.data.order.retryUrl, new RegExp(`^/checkout\\?retry=${orderNumber}&t=[a-f0-9]{36}$`)); assert.equal(s.data.order.retry.mode, 'one_time');
   assert.equal((await emails()).filter((m) => m.dedupe_key.includes(o.id)).length, 0);
 });
 
@@ -195,9 +195,10 @@ test('16. new subscription after cancellation starts again at year 1', async () 
 test('17. order confirmation page data + e-mail content', async () => {
   const { orderNumber, paymentId } = await checkout('one_time', 1, { email: 'conf@example.com' });
   await emu().setStatus(paymentId, 'paid'); await webhook(paymentId);
-  const r = await orderStatus(orderNumber, 'conf@example.com');
+  const r = await orderStatus(orderNumber);
   assert.equal(r.status, 200); assert.equal(r.data.order.paymentStatus, 'paid'); assert.equal(r.data.order.totalCents, 1895);
-  const wrong = await orderStatus(orderNumber, 'other@example.com'); assert.equal(wrong.status, 404);
+  const wrong = await orderStatus(orderNumber, 'a'.repeat(36)); assert.equal(wrong.status, 404);
+  const guess = await api('GET', `/api/orders/${orderNumber}?e=conf@example.com`); assert.equal(guess.status, 404, 'e-mail alone must not unlock an order');
 });
 
 test('18. error during redirect (user never returns) — webhook alone completes the order', async () => {
@@ -235,4 +236,66 @@ test('security: frontend amounts are ignored, CSRF enforced, rate limits, forged
   const bad = await api('POST', '/api/checkout', { mode: 'one_time', quantity: 99, ...(await import('./helpers.js')).customer() }); assert.equal(bad.status, 400);
   const expired = await checkout(); await emu().setStatus(expired.paymentId, 'expired'); await webhook(expired.paymentId);
   assert.equal((await order(expired.orderNumber)).payment_status, 'expired');
+});
+
+test('review fixes: profile applied only when paid; renewal retry reuses order; loyalty price synced at Mollie; forced-method cancel swept by cron', async () => {
+  // Unauthenticated checkout must not rewrite an existing customer's name/marketing consent.
+  const first = await checkout('one_time', 1, { email: 'profile@example.com', name: 'Real Name', marketingConsent: false });
+  await emu().setStatus(first.paymentId, 'paid'); await webhook(first.paymentId);
+  await checkout('one_time', 1, { email: 'profile@example.com', name: 'Impostor', marketingConsent: true }); // never paid
+  const [c] = await sql`SELECT name, marketing_consent FROM customers WHERE email = 'profile@example.com'`;
+  assert.equal(c.name, 'Real Name'); assert.equal(c.marketing_consent, false);
+
+  // Renewal: failed attempt + retry → one renewal order, recorded at the charged amount.
+  const sub = await checkout('subscription', 1, { email: 'retry@example.com' });
+  await emu().setStatus(sub.paymentId, 'paid'); await webhook(sub.paymentId);
+  const s = await subscriptionOf(sub.orderNumber);
+  const f = await emu().chargeSubscription(s.mollie_subscription_id, { outcome: 'failed' }); await webhook(f.id);
+  const ok = await emu().chargeSubscription(s.mollie_subscription_id, { outcome: 'paid' }); await webhook(ok.id);
+  const renewals = await sql`SELECT * FROM orders WHERE subscription_id = ${s.id} AND order_type = 'subscription_renewal'`;
+  assert.equal(renewals.length, 1); assert.equal(renewals[0].payment_status, 'paid');
+
+  // Loyalty anniversary → cron updates the Mollie amount BEFORE the next charge (year 3 = 15% in the test env).
+  await sql`UPDATE subscriptions SET loyalty_start_date = (now() - interval '2 years 1 day')::date WHERE id = ${s.id}`;
+  const cron = await api('GET', '/api/cron/daily', undefined, { headers: { authorization: 'Bearer test-cron-secret' } });
+  assert.equal(cron.status, 200); assert.ok(cron.data.report.amountSynced >= 1, JSON.stringify(cron.data.report));
+  const remote = await emu().getSubscription(s.mollie_customer_id, s.mollie_subscription_id);
+  assert.equal(remote.amount.value, '12.75');
+  const charged = await emu().chargeSubscription(s.mollie_subscription_id, { outcome: 'paid' }); await webhook(charged.id);
+  const [latest] = await sql`SELECT total_cents, discount_cents FROM orders WHERE mollie_payment_id = ${charged.id}`;
+  assert.equal(latest.total_cents, 1275); assert.equal(latest.discount_cents, 225);
+
+  // Forced-method cancel on the hosted page sends no webhook: the cron sweep resolves it.
+  const stale = await checkout('one_time', 1, { email: 'stale@example.com' });
+  await emu().setStatus(stale.paymentId, 'canceled', { fireHook: false });
+  await sql`UPDATE payments SET created_at = now() - interval '2 hours' WHERE mollie_payment_id = ${stale.paymentId}`;
+  assert.equal((await order(stale.orderNumber)).payment_status, 'open');
+  await api('GET', '/api/cron/daily', undefined, { headers: { authorization: 'Bearer test-cron-secret' } });
+  assert.equal((await order(stale.orderNumber)).payment_status, 'canceled');
+
+  // Abandoned pending subscription is expired and does not shadow the real one.
+  const dup = await checkout('subscription', 1, { email: 'retry2@example.com' });
+  await sql`UPDATE subscriptions SET created_at = now() - interval '4 hours' WHERE id = (SELECT subscription_id FROM orders WHERE number = ${dup.orderNumber})`;
+  await api('GET', '/api/cron/daily', undefined, { headers: { authorization: 'Bearer test-cron-secret' } });
+  assert.equal((await subscriptionOf(dup.orderNumber)).status, 'canceled');
+});
+
+test('magic link: GET shows a page, only the POST consumes the token (scanner-safe)', async () => {
+  await sql`INSERT INTO customers (email, name) VALUES ('magic@example.com', 'M') ON CONFLICT DO NOTHING`;
+  const r = await api('POST', '/api/auth/request', { email: 'magic@example.com', locale: 'nl' });
+  assert.equal(r.status, 200);
+  const [row] = await sql`SELECT token_hash FROM login_tokens WHERE email = 'magic@example.com' ORDER BY created_at DESC LIMIT 1`;
+  assert.ok(row);
+  const [mail] = await sql`SELECT dedupe_key FROM email_log WHERE to_email = 'magic@example.com'`; assert.ok(mail);
+  // We cannot read the raw token from the hash; emulate the flow with a known token instead.
+  const { newLoginToken } = await import('../src/server/security.js');
+  const { token, hash } = newLoginToken();
+  await sql`INSERT INTO login_tokens (token_hash, email, expires_at) VALUES (${hash}, 'magic@example.com', now() + interval '15 minutes')`;
+  const page = await api('GET', `/api/auth/verify?token=${encodeURIComponent(token)}&l=nl`);
+  assert.equal(page.status, 200); assert.match(String(page.data), /<form method="post" action="\/api\/auth\/consume"/);
+  const [unused] = await sql`SELECT used_at FROM login_tokens WHERE token_hash = ${hash}`; assert.equal(unused.used_at, null, 'GET must not consume the token');
+  const consume = await api('POST', '/api/auth/consume', new URLSearchParams({ token, l: 'nl' }));
+  assert.equal(consume.status, 303); assert.equal(consume.headers.get('location'), '/nl/account'); assert.match(consume.headers.get('set-cookie') || '', /rynse_session=/);
+  const again = await api('POST', '/api/auth/consume', new URLSearchParams({ token, l: 'nl' }));
+  assert.equal(again.headers.get('location'), '/nl/account?error=link');
 });

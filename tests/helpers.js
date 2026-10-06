@@ -51,7 +51,7 @@ export async function checkout(mode = 'one_time', quantity = 1, overrides = {}) 
   const r = await api('POST', '/api/checkout', { mode, quantity, ...customer(overrides) });
   if (r.status !== 200) throw new Error(`checkout failed: ${r.status} ${JSON.stringify(r.data)}`);
   const paymentId = new URL(r.data.checkoutUrl).searchParams.get('id');
-  return { ...r.data, paymentId };
+  return { ...r.data, paymentId, token: r.data.accessToken };
 }
 
 export const webhook = (id) => api('POST', '/api/webhooks/mollie', new URLSearchParams({ id }));
@@ -59,4 +59,4 @@ export const processNow = (id) => processPaymentWebhook(id);
 export const order = async (number) => (await sql`SELECT * FROM orders WHERE number = ${number}`)[0];
 export const subscriptionOf = async (orderNumber) => { const o = await order(orderNumber); return (await sql`SELECT * FROM subscriptions WHERE id = ${o.subscription_id}`)[0]; };
 export const emails = () => sql`SELECT dedupe_key, template, to_email FROM email_log ORDER BY id`;
-export const orderStatus = (number, email = 'tester@example.com') => api('GET', `/api/orders/${number}?e=${encodeURIComponent(email)}`);
+export const orderStatus = async (number, token) => { if (!token) { const [o] = await sql`SELECT access_token FROM orders WHERE number = ${number}`; token = o?.access_token; } return api('GET', `/api/orders/${number}?t=${encodeURIComponent(token || '')}`); };

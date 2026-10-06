@@ -132,7 +132,13 @@ async def seo(p):
     await pg.goto(BASE + '/')
     ld = await pg.evaluate("Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(s => JSON.parse(s.textContent))")
     types = [t.get('@type') for x in ld for t in (x if isinstance(x, list) else [x])]
-    ok('JSON-LD Organization/WebSite/Product/FAQPage present', all(t in types for t in ['Organization', 'WebSite', 'Product', 'FAQPage']), str(types))
+    ok('JSON-LD Organization/WebSite/Product present on home', all(t in types for t in ['Organization', 'WebSite', 'Product']), str(types))
+    ok('home has no FAQPage schema (FAQPage lives on /faq only)', 'FAQPage' not in types, str(types))
+    await pg.goto(BASE + '/faq')
+    fld = await pg.evaluate("Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(s => JSON.parse(s.textContent))")
+    ftypes = [t.get('@type') for x in fld for t in (x if isinstance(x, list) else [x])]
+    ok('/faq has FAQPage schema', 'FAQPage' in ftypes, str(ftypes))
+    await pg.goto(BASE + '/')
     prod = [t for x in ld for t in (x if isinstance(x, list) else [x]) if t.get('@type') == 'Product'][0]
     ok('Product JSON-LD has no price while price is not final', 'offers' not in prod)
     ok('single H1', await pg.locator('h1').count() == 1)

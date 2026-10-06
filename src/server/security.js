@@ -116,7 +116,8 @@ export function requireCron(request) {
   const expected = process.env.CRON_SECRET || '';
   const auth = request.headers.get('authorization') || '';
   if (!expected) throw new HttpError(503, 'CRON_SECRET is not configured');
-  if (auth !== `Bearer ${expected}`) throw new HttpError(401, 'Unauthorized');
+  const given = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (given.length !== expected.length || !timingSafeEqual(Buffer.from(given), Buffer.from(expected))) throw new HttpError(401, 'Unauthorized');
 }
 
 /**

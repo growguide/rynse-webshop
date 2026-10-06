@@ -1,6 +1,6 @@
 // Nederlands
 export default {
-  'meta.home.title': 'Stay fresh. Anywhere. | {n} cleansing wipes',
+  'meta.home.title': 'Stay fresh. Anywhere. | {n} cleansing wipes, individueel verpakt',
   'meta.home.description': 'RYNSE maakt individueel verpakte, water-based cleansing wipes voor een fris, schoon gevoel waar geen water is. {n} wipes per verpakking, pH-balanced, alcoholvrij. Bestel een losse verpakking of neem een abonnement — betaal met iDEAL, Apple Pay of creditcard.',
   'meta.why.title': 'Waarom RYNSE',
   'meta.why.description': 'Waarom RYNSE: {n} individueel verpakte, water-based, pH-balanced, alcoholvrije cleansing wipes voor een fris gevoel overal — gym, reizen, festival, werk, dates.',
@@ -160,7 +160,7 @@ export default {
   'whyPage.lead': 'Tussen de gym en kantoor. Tussen de vlucht en de meeting. Tussen het laatste nummer en de nachtbus. RYNSE is een frisse start die je bij je draagt.',
   'whyPage.1.text': 'Een water-based cleansing wipe voor een snel, schoon en fris gevoel als er geen water is.',
   'whyPage.2.text': 'Elke wipe heeft zijn eigen compacte, discrete sachet. Open er een wanneer je hem nodig hebt; de rest blijft verzegeld en fris.',
-  'whyPage.3.text': 'pH-balanced en alcoholvrij. {n} wipes per verpakking — genoeg voor een maand echt leven.',
+  'whyPage.3.text': 'pH-balanced en alcoholvrij. {n} individueel verpakte wipes per verpakking, klaar wanneer jij dat bent.',
   'whyPage.box.eyebrow': 'Wat zit er in de verpakking',
   'whyPage.box.titleA': '{n} wipes.',
   'whyPage.box.titleB': 'Nul gedoe.',
@@ -288,7 +288,7 @@ export default {
   'email.confirm.subject': 'Bestelling {number} bevestigd',
   'email.confirm.body': 'Dank — je betaling is gelukt en we maken je verpakking klaar.',
   'email.confirm.shipTo': 'Bezorgadres:',
-  'email.confirm.sub': 'Dit is de eerste levering van je abonnement (elke {interval}). Je kunt op elk moment pauzeren of opzeggen via je account — zonder vragen.',
+  'email.confirm.sub': 'Dit is de eerste levering van je abonnement (elke {interval}). Je kunt op elk moment opzeggen via je account — zonder vragen.',
   'email.confirm.track': 'Volg je bestelling:',
   'email.line.discount': 'Korting',
   'email.line.shipping': 'Verzending',
@@ -338,7 +338,7 @@ export default {
   'js.checkout.priceError': 'Prijzen konden niet worden geladen',
   'js.checkout.error': 'Er ging iets mis. Probeer het opnieuw.',
   'js.order.thanksA': 'Dankjewel.',
-  'js.order.thanksB': 'Je bent klaar.',
+  'js.order.thanksB': 'Alles geregeld.',
   'js.order.failedA': 'Betaling',
   'js.order.failedB': 'niet afgerond.',
   'js.order.pendingA': 'Je betaling wordt',
@@ -391,4 +391,6 @@ export default {
   'js.lang.suggest': 'Liever {language}?',
   'js.lang.switch': 'Wissel',
   'js.lang.dismiss': 'Nee, bedankt',
+  'hero.options': 'Kies eenmalig of abonnement ↓',
+  'checkout.subConfirm': 'Door te betalen start je een abonnement: elke {interval} bezorgd en afgeschreven, altijd opzegbaar via je account.',
 };

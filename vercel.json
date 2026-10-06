@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "installCommand": "echo 'no dependencies'",
   "framework": null,
+  "cleanUrls": true,
   "regions": ["fra1"],
   "functions": { "api/index.js": { "maxDuration": 30, "memory": 1024 } },
   "rewrites": [
@@ -20,7 +21,8 @@
       { "key": "X-Frame-Options", "value": "DENY" },
       { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
       { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-      { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://analytics.tiktok.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://analytics.tiktok.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://analytics.tiktok.com; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mollie.com https://*.mollie.com; object-src 'none'" }
     ] }
   ]
 }

@@ -1,5 +1,5 @@
 /* RYNSE checkout — validates locally, sends only {mode, quantity, contact, address, method}; the server prices. */
-(() => {
+(async () => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -8,9 +8,15 @@
   if (!form || !R) return;
   const params = new URLSearchParams(location.search);
   let cart = R.readCart();
-  if (!cart && params.get('retry')) cart = { mode: 'one_time', quantity: 1 };
+  const retryNumber = params.get('retry') || params.get('canceled');
+  const retryToken = params.get('t');
+  let retryOrder = null;
+  if (retryNumber && retryToken) {
+    // Rebuild the cart from the failed/cancelled order (same mode and quantity) and refresh its status.
+    try { const r = await fetch(`/api/orders/${encodeURIComponent(retryNumber)}?t=${encodeURIComponent(retryToken)}`); const d = await r.json(); if (r.ok && d.order?.retry) { retryOrder = d.order; cart = { mode: d.order.retry.mode, quantity: d.order.retry.quantity }; R.writeCart(cart); } } catch {}
+  }
   if (!cart) { $('[data-cart-empty]').hidden = false; $$('.form-section, .checkout-summary').forEach((el) => (el.style.display = 'none')); return; }
-  if (params.get('retry') || params.get('canceled')) $('[data-retry-note]').hidden = false;
+  if (retryNumber) $('[data-retry-note]').hidden = false;
 
   // Apple Pay: only offer it when the device can actually use it (hosted Mollie checkout still handles the wallet).
   const applePayRow = $('[data-method-applepay]');
@@ -33,7 +39,7 @@
       $('[data-pay-label]').textContent = `${cart.mode === 'subscription' ? T('checkout.paySubscribe') : T('checkout.pay')} ${fmt(q.totalCents)}`;
     } catch (e) { $('[data-sum-totals]').innerHTML = `<div class="alert alert-error">${e.message || T('checkout.priceError')}</div>`; }
   };
-  $$('[data-mode-btn]').forEach((b) => b.addEventListener('click', () => { cart = { ...cart, mode: b.dataset.modeBtn }; R.writeCart(cart); summary(); }));
+  $$('[data-mode-btn]').forEach((b) => b.addEventListener('click', () => { cart = { ...cart, mode: b.dataset.modeBtn }; R.writeCart(cart); summary(); sumModeFix(); }));
   $('#f-country').addEventListener('change', summary);
   summary();
   R.track('begin_checkout', { currency: 'EUR', items: [{ item_id: 'RYNSE-40', quantity: cart.quantity, item_variant: cart.mode }] });
@@ -41,6 +47,13 @@
   // Restore contact details typed earlier (same device) to shorten repeat checkouts. Never stores payment data.
   const DRAFT = 'rynse:checkout-draft';
   try { const d = JSON.parse(sessionStorage.getItem(DRAFT) || '{}'); for (const [k, v] of Object.entries(d)) { const el = form.elements[k]; if (el && el.type !== 'checkbox' && el.type !== 'radio') el.value = v; } } catch {}
+  if (retryOrder?.retry) { const a = retryOrder.retry.address || {}; const fill = (k, v) => { if (v && form.elements[k] && !form.elements[k].value) form.elements[k].value = v; }; fill('email', retryOrder.retry.email); fill('name', a.name); fill('street', a.street); fill('postalCode', a.postalCode); fill('city', a.city); if (a.country) form.elements.country.value = a.country; }
+  // Default payment method by language: iDEAL for Dutch visitors, card elsewhere.
+  if (R.locale !== 'nl') { const card = form.querySelector('input[name="method"][value="creditcard"]'); if (card) card.checked = true; }
+  // Subscription reminder right above the Pay button (the full terms are in the summary).
+  const subConfirm = $('[data-sub-confirm]');
+  const sumModeFix = () => { if (subConfirm) subConfirm.hidden = cart.mode !== 'subscription'; };
+  sumModeFix();
   form.addEventListener('input', () => { try { const d = {}; ['email', 'name', 'street', 'postalCode', 'city', 'country'].forEach((k) => (d[k] = form.elements[k].value)); sessionStorage.setItem(DRAFT, JSON.stringify(d)); } catch {} });
 
   const validate = () => {
@@ -49,6 +62,7 @@
       const input = $('input, select, textarea', f); if (!input) return;
       const valid = input.checkValidity();
       f.classList.toggle('has-error', !valid); input.setAttribute('aria-invalid', String(!valid));
+      const errEl = f.querySelector('.err'); if (errEl) { if (!errEl.id) errEl.id = `${input.id}-err`; input.setAttribute('aria-describedby', valid ? '' : errEl.id); }
       if (!valid && ok) { input.focus(); ok = false; }
     });
     const terms = form.elements.terms; const termsWrap = terms.closest('.consent');
@@ -73,7 +87,7 @@
       R.track('add_payment_info', { payment_type: f.method.value });
       if (cart.mode === 'subscription') R.track('subscription_purchase_started', { quantity: cart.quantity });
       // The cart is cleared once the order page confirms payment; keep it for a retry.
-      sessionStorage.setItem('rynse:pending-order', data.orderNumber);
+      sessionStorage.setItem('rynse:pending-order', `${data.orderNumber}:${data.accessToken}`);
       location.assign(data.checkoutUrl);
     } catch (ex) {
       err.textContent = ex.message || T('checkout.error'); err.hidden = false;

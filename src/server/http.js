@@ -84,6 +84,10 @@ export const v = {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) throw new HttpError(400, 'Please enter a valid e-mail address');
     return s;
   },
+  uuid(x, name = 'id') {
+    if (typeof x !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x)) throw new HttpError(400, `${name} is not a valid id`);
+    return x;
+  },
   int(x, { min = -Infinity, max = Infinity, name = 'value' } = {}) {
     const n = typeof x === 'string' ? Number.parseInt(x, 10) : x;
     if (!Number.isInteger(n)) throw new HttpError(400, `${name} must be a whole number`);

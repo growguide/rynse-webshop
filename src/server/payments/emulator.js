@@ -117,6 +117,10 @@ export function createEmulatorClient() {
       await sql`INSERT INTO emulator_subscriptions (id, customer_id, resource) VALUES (${s.id}, ${cid}, ${sql.json(s)})`;
       return s;
     },
+    async listSubscriptions(cid) {
+      const rows = await sql`SELECT resource FROM emulator_subscriptions WHERE customer_id = ${cid}`;
+      return { count: rows.length, _embedded: { subscriptions: rows.map((r) => r.resource) } };
+    },
     async getSubscription(cid, sid) {
       const [row] = await sql`SELECT resource FROM emulator_subscriptions WHERE id = ${sid} AND customer_id = ${cid}`;
       if (!row) { const e = new Error('Subscription not found'); e.status = 404; throw e; }

@@ -4,7 +4,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const R = window.RYNSE; if (!R) return;
   const number = decodeURIComponent(location.pathname.split('/').pop() || '');
-  const email = new URLSearchParams(location.search).get('e') || '';
+  const token = new URLSearchParams(location.search).get('t') || '';
   const fmt = R.fmt, T = R.T, P = R.P;
   const title = $('[data-order-title]'), msg = $('[data-order-message]'), icon = $('[data-status-icon]'), details = $('[data-order-details]'), actions = $('[data-order-actions]');
   const icons = {
@@ -35,7 +35,7 @@
   };
   const poll = async () => {
     try {
-      const r = await fetch(`/api/orders/${encodeURIComponent(number)}?e=${encodeURIComponent(email)}`);
+      const r = await fetch(`/api/orders/${encodeURIComponent(number)}?t=${encodeURIComponent(token)}`);
       if (r.status === 404) { title.textContent = T('order.notFound'); msg.textContent = T('order.notFoundMsg'); actions.innerHTML = `<a class="btn btn-ghost" href="${P}/account">${T('order.account')}</a>`; return; }
       const { order } = await r.json();
       const final = render(order);

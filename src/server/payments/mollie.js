@@ -68,6 +68,7 @@ export function createMollieClient({ apiKey = process.env.MOLLIE_API_KEY, fetchI
     revokeMandate: (customerId, mandateId) => call('DELETE', `/customers/${encodeURIComponent(customerId)}/mandates/${encodeURIComponent(mandateId)}`),
     // --- Subscriptions ----------------------------------------------------
     createSubscription: (customerId, params, idempotencyKey) => call('POST', `/customers/${encodeURIComponent(customerId)}/subscriptions`, { body: params, idempotencyKey }),
+    listSubscriptions: (customerId) => call('GET', `/customers/${encodeURIComponent(customerId)}/subscriptions`, { query: { limit: 250 } }),
     getSubscription: (customerId, subId) => call('GET', `/customers/${encodeURIComponent(customerId)}/subscriptions/${encodeURIComponent(subId)}`),
     updateSubscription: (customerId, subId, params) => call('PATCH', `/customers/${encodeURIComponent(customerId)}/subscriptions/${encodeURIComponent(subId)}`, { body: params }),
     cancelSubscription: (customerId, subId) => call('DELETE', `/customers/${encodeURIComponent(customerId)}/subscriptions/${encodeURIComponent(subId)}`),

@@ -25,7 +25,7 @@ export function layout({ t, path: pathname, title, description, bodyClass = '', 
   const alternates = noindex ? '' : LOCALES.map((l) => `<link rel="alternate" hreflang="${LOCALE_META[l].lang}" href="${esc(site.baseUrl + href(pathname, l))}">`).join('\n') + `\n<link rel="alternate" hreflang="x-default" href="${esc(site.baseUrl + href(pathname, DEFAULT_LOCALE))}">`;
   const links = navLinks(t);
   const clientCfg = {
-    env: isDev ? 'development' : 'production', locale, currency: product.currency, priceCents: product.priceCents,
+    env: isDev ? 'development' : 'production', locale, currency: product.currency, priceCents: product.priceCents, maxQuantity: product.maxQuantity,
     interval: intervalLabel(t), numberLocale: meta.numberLocale, analytics: site.analytics, prefix: href('/', locale).replace(/\/$/, ''),
     path: pathname, i18n: clientStrings(locale), languages: Object.fromEntries(LOCALES.map((l) => [l, LOCALE_META[l].name])),
   };

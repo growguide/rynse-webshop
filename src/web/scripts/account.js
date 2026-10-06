@@ -16,7 +16,7 @@
     const input = form.elements.email; const field = input.closest('.field');
     if (!input.checkValidity()) { field.classList.add('has-error'); return; } field.classList.remove('has-error');
     const btn = $('button', form); btn.setAttribute('aria-busy', 'true');
-    try { await R.api('/api/auth/request', { email: input.value }); ok.hidden = false; } catch (ex) { err.textContent = ex.message; err.hidden = false; } finally { btn.removeAttribute('aria-busy'); }
+    try { await R.api('/api/auth/request', { email: input.value, locale: R.locale }); ok.hidden = false; } catch (ex) { err.textContent = ex.message; err.hidden = false; } finally { btn.removeAttribute('aria-busy'); }
   });
   if (new URLSearchParams(location.search).get('error') === 'link') { const err = $('[data-form-error]', form); err.textContent = T('account.badLink'); err.hidden = false; }
 
@@ -50,7 +50,7 @@
     if (!d.signedIn) { signin.hidden = false; content.hidden = true; return; }
     signin.hidden = true; content.hidden = false;
     renderSub(d.subscription);
-    $('[data-acc-orders]').innerHTML = d.orders.length ? d.orders.map((o) => `<tr><td><a class="link" href="${P}/order/${esc(o.number)}?e=${encodeURIComponent(d.customer.email)}">${esc(o.number)}</a></td><td>${date(o.createdAt)}</td><td>${esc(T(`order.type.${o.orderType}`))}</td><td>${fmt(o.totalCents)}</td><td>${pill(o.paymentStatus)}</td><td>${pill(o.fulfillmentStatus)}${o.trackingCode ? `<div class="small muted">${esc(o.trackingCode)}</div>` : ''}</td></tr>`).join('') : `<tr><td colspan="6" class="muted">${esc(T('account.noOrders'))}</td></tr>`;
+    $('[data-acc-orders]').innerHTML = d.orders.length ? d.orders.map((o) => `<tr><td><a class="link" href="${P}/order/${esc(o.number)}?t=${encodeURIComponent(o.accessToken || '')}">${esc(o.number)}</a></td><td>${date(o.createdAt)}</td><td>${esc(T(`order.type.${o.orderType}`))}</td><td>${fmt(o.totalCents)}</td><td>${pill(o.paymentStatus)}</td><td>${pill(o.fulfillmentStatus)}${o.trackingCode ? `<div class="small muted">${esc(o.trackingCode)}</div>` : ''}</td></tr>`).join('') : `<tr><td colspan="6" class="muted">${esc(T('account.noOrders'))}</td></tr>`;
   };
   $('[data-logout]')?.addEventListener('click', async () => { await R.api('/api/auth/logout', {}); location.reload(); });
   load();

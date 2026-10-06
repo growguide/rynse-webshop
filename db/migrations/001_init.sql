@@ -35,6 +35,7 @@ CREATE TYPE fulfillment_status AS ENUM ('unfulfilled', 'processing', 'shipped', 
 CREATE TABLE IF NOT EXISTS orders (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   number               text NOT NULL UNIQUE,                 -- human readable, e.g. RY-2026-000123
+  access_token         text NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(18), 'hex'), -- capability for the status page / e-mail links
   customer_id          uuid REFERENCES customers(id) ON DELETE SET NULL,
   subscription_id      uuid,                                 -- set for subscription_first / renewal (FK added below)
   order_type           order_type NOT NULL,
@@ -51,6 +52,8 @@ CREATE TABLE IF NOT EXISTS orders (
   fulfillment_status   fulfillment_status NOT NULL DEFAULT 'unfulfilled',
   mollie_payment_id    text UNIQUE,                          -- tr_xxx of the *latest* payment attempt
   email                citext NOT NULL,
+  locale               text NOT NULL DEFAULT 'en',
+  marketing_consent    boolean NOT NULL DEFAULT false,       -- applied to the customer only once the order is paid
   shipping_address     jsonb NOT NULL,                       -- {name, street, postalCode, city, country}
   pricing_snapshot     jsonb NOT NULL,                       -- exact config values used (audit trail)
   confirmation_sent_at timestamptz,
@@ -81,6 +84,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   mollie_customer_id      text,                              -- cst_xxx
   mollie_mandate_id       text,                              -- mdt_xxx
   mollie_subscription_id  text UNIQUE,                       -- sub_xxx
+  mollie_amount_cents     integer,                           -- amount currently configured at Mollie (kept in sync by the cron)
   first_order_id          uuid REFERENCES orders(id) ON DELETE SET NULL,
   start_date              date,                              -- first successful payment
   next_payment_date       date,
@@ -168,6 +172,17 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   window_start timestamptz NOT NULL,
   count       integer NOT NULL DEFAULT 0,
   PRIMARY KEY (bucket, window_start)
+);
+
+-- ---------------------------------------------------------------------------
+-- CONTACT MESSAGES
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id          bigserial PRIMARY KEY,
+  email       citext NOT NULL,
+  name        text,
+  message     text NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 -- ---------------------------------------------------------------------------

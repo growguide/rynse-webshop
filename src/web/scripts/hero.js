@@ -83,35 +83,54 @@
   };
   const frameIndex = () => Math.round(progress * (frames.images.length - 1));
 
+  /**
+   * Frame loading strategy (bandwidth + memory conscious):
+   *  - nothing beyond the poster until the visitor shows intent (scroll / touch / pointer move)
+   *  - mobile uses at most 40 frames (24 on low-end devices), desktop the full set
+   *  - frames load in order of distance to the current scroll position, 3 at a time,
+   *    so whatever the visitor is looking at sharpens first; far frames are released
+   */
+  let loadingStarted = false;
   async function loadFrames() {
-    if (!manifestUrl || !canvas || reduce || saveData) return;
+    if (loadingStarted || !manifestUrl || !canvas || reduce || saveData) return;
+    loadingStarted = true;
     let manifest;
     try { const r = await fetch(manifestUrl); if (!r.ok) return; manifest = await r.json(); } catch { return; }
     const set = (!isDesktop() && manifest.mobile) ? manifest.mobile : manifest.desktop;
     if (!set || !set.count) return;
-    const count = lowEnd ? Math.min(set.count, Math.ceil(set.count / 2)) : set.count;
-    const step = set.count / count;
+    const cap = isDesktop() ? set.count : (lowEnd ? 24 : 40);
+    const count = Math.min(set.count, cap);
+    const step = count > 1 ? (set.count - 1) / (count - 1) : 0;
     const urls = Array.from({ length: count }, (_, i) => `${set.path}${String(Math.round(i * step) + 1).padStart(3, '0')}.${set.ext || 'webp'}`);
-    frames = { set, images: new Array(count).fill(null) };
+    frames = { set, images: new Array(count).fill(null), loading: new Set() };
     ctx = canvas.getContext('2d', { alpha: false });
     sizeCanvas();
     const load = (i) => new Promise((resolve) => {
+      if (frames.images[i] || frames.loading.has(i)) return resolve(true);
+      frames.loading.add(i);
       const img = new Image(); img.decoding = 'async';
-      img.onload = () => { frames.images[i] = img; resolve(true); };
-      img.onerror = () => resolve(false);
+      img.onload = () => { frames.images[i] = img; frames.loading.delete(i); resolve(true); };
+      img.onerror = () => { frames.loading.delete(i); resolve(false); };
       img.src = urls[i];
     });
-    // First frame → swap poster for canvas; then coarse keyframes; then fill.
     if (!(await load(0))) { frames = null; return; }
     drawFrame(0); visual.classList.add('has-frames'); layoutSachets();
-    const order = [];
-    for (const stride of [8, 4, 2, 1]) for (let i = 0; i < count; i += stride) if (!order.includes(i)) order.push(i);
-    const concurrency = 4;
-    let cursor = 0;
-    const worker = async () => { while (cursor < order.length) { const i = order[cursor++]; if (!frames.images[i]) await load(i); if (Math.abs(i - frameIndex()) < 3) requestDraw(); } };
-    await Promise.all(Array.from({ length: concurrency }, worker));
+    // Priority queue: coarse keyframes first, then everything ordered by distance to the current frame.
+    const pending = new Set(Array.from({ length: count }, (_, i) => i).filter((i) => i !== 0));
+    const nextIndex = () => {
+      const cur = frameIndex();
+      let best = null, bestScore = Infinity;
+      for (const i of pending) { const d = Math.abs(i - cur); const score = (i % 8 === 0 ? d * 0.5 : d); if (score < bestScore) { bestScore = score; best = i; } }
+      return best;
+    };
+    const worker = async () => { for (;;) { const i = nextIndex(); if (i === null) return; pending.delete(i); await load(i); if (Math.abs(i - frameIndex()) < 3) requestDraw(); } };
+    await Promise.all([worker(), worker(), worker()]);
     requestDraw();
   }
+  const startOnIntent = () => { loadFrames(); ['scroll', 'touchstart', 'pointermove', 'wheel', 'keydown'].forEach((ev) => window.removeEventListener(ev, startOnIntent)); };
+  ['scroll', 'touchstart', 'pointermove', 'wheel', 'keydown'].forEach((ev) => window.addEventListener(ev, startOnIntent, { passive: true }));
+  // Desktop visitors who never scroll still get the sequence once the page is idle for a while.
+  if (isDesktop()) setTimeout(() => { if ('requestIdleCallback' in window) requestIdleCallback(loadFrames, { timeout: 4000 }); else loadFrames(); }, 6000);
 
   // ---------- render loop (rAF, only on change) ----------
   let raf = 0;
@@ -127,7 +146,6 @@
   window.addEventListener('scroll', requestDraw, { passive: true });
   window.addEventListener('resize', () => { if (frames) sizeCanvas(); requestDraw(); }, { passive: true });
   render();
-  if ('requestIdleCallback' in window) requestIdleCallback(loadFrames, { timeout: 1500 }); else setTimeout(loadFrames, 300);
 
   // Parallax tilt on pointer (desktop only, subtle)
   if (!reduce && matchMedia('(hover: hover)').matches && floatLayer) {

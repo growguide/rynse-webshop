@@ -165,7 +165,7 @@ export default {
   'whyPage.lead': 'Between the gym and the office. Between the flight and the meeting. Between the last song and the night bus. RYNSE is a fresh start you can carry.',
   'whyPage.1.text': 'A water-based cleansing wipe for a quick, clean, fresh feeling when water is not available.',
   'whyPage.2.text': 'Every wipe has its own compact, discreet sachet. Open one when you need it; the rest stay sealed and fresh.',
-  'whyPage.3.text': 'pH-balanced and alcohol-free. {n} wipes per pack — enough for a month of real life.',
+  'whyPage.3.text': 'pH-balanced and alcohol-free. {n} individually wrapped wipes per pack, ready whenever you are.',
   'whyPage.box.eyebrow': "What's in the pack",
   'whyPage.box.titleA': '{n} wipes.',
   'whyPage.box.titleB': 'Zero fuss.',
@@ -301,7 +301,7 @@ export default {
   'email.confirm.subject': 'Order {number} confirmed',
   'email.confirm.body': "Thanks — your payment went through and we're getting your pack ready.",
   'email.confirm.shipTo': 'Shipping to:',
-  'email.confirm.sub': 'This is the first delivery of your subscription (every {interval}). You can pause or cancel any time from your account — no questions asked.',
+  'email.confirm.sub': 'This is the first delivery of your subscription (every {interval}). You can cancel any time from your account — no questions asked.',
   'email.confirm.track': 'Track your order:',
   'email.line.discount': 'Discount',
   'email.line.shipping': 'Shipping',
@@ -323,6 +323,8 @@ export default {
   'email.magic.button': 'Sign in',
   'email.magic.ignore': "If you didn't request this, you can ignore this e-mail.",
 
+  'hero.options': 'Choose one-time or subscription ↓',
+  'checkout.subConfirm': 'By paying you start a subscription: delivered and charged every {interval}, cancel anytime from your account.',
   // ---- browser strings --------------------------------------------------
   'js.cart.empty': 'Your cart is empty.',
   'js.cart.get': 'Get RYNSE',

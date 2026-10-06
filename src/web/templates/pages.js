@@ -60,7 +60,7 @@ export function renderContact({ t, assets }) {
     <div class="fields-2"><div class="field"><label for="c-name">${esc(t('contact.name'))}</label><input id="c-name" name="name" autocomplete="name" maxlength="120"></div><div class="field"><label for="c-email">${esc(t('contact.email'))}</label><input id="c-email" name="email" type="email" autocomplete="email" required maxlength="254"><span class="err">${esc(t('contact.errEmail'))}</span></div></div>
     <div class="field"><label for="c-msg">${esc(t('contact.message'))}</label><textarea id="c-msg" name="message" required minlength="10" maxlength="4000"></textarea><span class="err">${esc(t('contact.errMessage'))}</span></div>
     <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
-    <div class="alert alert-error" data-form-error hidden></div><div class="alert alert-ok" data-form-ok hidden>${esc(t('contact.ok'))}</div>
+    <div class="alert alert-error" data-form-error hidden role="alert"></div><div class="alert alert-ok" data-form-ok hidden role="status">${esc(t('contact.ok'))}</div>
     <div><button class="btn btn-primary" type="submit"><span class="spinner" aria-hidden="true"></span><span>${esc(t('contact.send'))}</span></button></div>
   </form>
   <aside class="summary-card"><div><p class="eyebrow">${esc(t('contact.email'))}</p><p style="margin-top:6px"><a class="link" href="mailto:${esc(brand.supportEmail)}">${esc(brand.supportEmail)}</a></p></div><div><p class="eyebrow">${esc(t('contact.social'))}</p><p style="margin-top:6px">Instagram <a class="link" href="${esc(brand.social.instagram.url)}" rel="noopener" target="_blank">${esc(brand.social.instagram.handle)}</a><br>TikTok <a class="link" href="${esc(brand.social.tiktok.url)}" rel="noopener" target="_blank">${esc(brand.social.tiktok.handle)}</a></p></div><div><p class="eyebrow">${esc(t('contact.company'))}</p><p class="small muted" style="margin-top:6px">${esc(brand.legalName)}<br>${esc(brand.legal.address)}<br>KvK ${esc(brand.legal.kvk)} · VAT ${esc(brand.legal.vat)}</p></div></aside>
@@ -76,16 +76,16 @@ export function renderCheckout({ t, assets }) {
   <form class="fields" data-checkout-form novalidate>
     <div class="alert alert-info" data-cart-empty hidden>${esc(t('checkout.empty'))} <a class="link" href="${t.href('/')}#buy">${esc(t('cta.get'))}</a></div>
     <div class="alert alert-error" data-retry-note hidden>${esc(t('checkout.retry'))}</div>
-    <div class="form-section" style="border-top:0;padding-top:0"><h3>${esc(t('checkout.contact'))}</h3>
+    <div class="form-section" style="border-top:0;padding-top:0"><h2 class="form-title">${esc(t('checkout.contact'))}</h2>
       <div class="field"><label for="f-email">${esc(t('checkout.email'))}</label><input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254"><span class="err">${esc(t('checkout.errEmail'))}</span></div>
     </div>
-    <div class="form-section"><h3>${esc(t('checkout.delivery'))}</h3>
+    <div class="form-section"><h2 class="form-title">${esc(t('checkout.delivery'))}</h2>
       <div class="field"><label for="f-name">${esc(t('checkout.name'))}</label><input id="f-name" name="name" autocomplete="name" required minlength="2" maxlength="120"><span class="err">${esc(t('checkout.errName'))}</span></div>
       <div class="field"><label for="f-street">${esc(t('checkout.street'))}</label><input id="f-street" name="street" autocomplete="street-address" required minlength="3" maxlength="160"><span class="err">${esc(t('checkout.errStreet'))}</span></div>
       <div class="fields-2"><div class="field"><label for="f-postal">${esc(t('checkout.postal'))}</label><input id="f-postal" name="postalCode" autocomplete="postal-code" required minlength="4" maxlength="12"><span class="err">${esc(t('checkout.required'))}</span></div><div class="field"><label for="f-city">${esc(t('checkout.city'))}</label><input id="f-city" name="city" autocomplete="address-level2" required minlength="2" maxlength="80"><span class="err">${esc(t('checkout.required'))}</span></div></div>
       <div class="field"><label for="f-country">${esc(t('checkout.country'))}</label><select id="f-country" name="country" autocomplete="country">${shipping.countries.map((c) => `<option value="${c}"${c === shipping.defaultCountry ? ' selected' : ''}>${esc(t(`checkout.country.${c}`))}</option>`).join('')}</select></div>
     </div>
-    <div class="form-section"><h3>${esc(t('checkout.payment'))}</h3>
+    <div class="form-section"><h2 class="form-title">${esc(t('checkout.payment'))}</h2>
       <div class="methods" role="radiogroup" aria-label="${esc(t('checkout.methodAria'))}">
         <label class="method"><input type="radio" name="method" value="ideal" checked><img src="/assets/payment/ideal.svg" alt="" width="32" height="24"><span class="m-name">${esc(t('checkout.method.ideal'))}</span></label>
         <label class="method" data-method-applepay><input type="radio" name="method" value="applepay"><img src="/assets/payment/applepay.svg" alt="" width="32" height="24"><span class="m-name">${esc(t('checkout.method.applepay'))}</span></label>
@@ -96,7 +96,8 @@ export function renderCheckout({ t, assets }) {
     <div class="form-section">
       <label class="consent"><input type="checkbox" name="marketingConsent"><span>${esc(t('checkout.marketing'))}</span></label>
       <label class="consent"><input type="checkbox" name="terms" required><span>${t('checkout.terms', { terms: t.href('/terms'), privacy: t.href('/privacy') })}<span class="err" style="display:block">${esc(t('checkout.errTerms'))}</span></span></label>
-      <div class="alert alert-error" data-form-error hidden></div>
+      <p class="sub-confirm" data-sub-confirm hidden>${esc(t('checkout.subConfirm', { interval: esc(interval) }))}</p>
+      <div class="alert alert-error" data-form-error hidden role="alert" aria-live="assertive"></div>
       <button class="btn btn-primary btn-block" type="submit" data-pay><span class="spinner" aria-hidden="true"></span><span data-pay-label>${esc(t('checkout.pay'))}</span></button>
       ${payBadges(t, { label: false })}
     </div>
@@ -136,7 +137,7 @@ export function renderAccount({ t, assets }) {
       <p>${esc(t('account.signinText'))}</p>
       <form class="fields" data-signin-form novalidate>
         <div class="field"><label for="a-email">${esc(t('account.email'))}</label><input id="a-email" name="email" type="email" autocomplete="email" required><span class="err">${esc(t('account.errEmail'))}</span></div>
-        <div class="alert alert-error" data-form-error hidden></div><div class="alert alert-ok" data-form-ok hidden>${esc(t('account.linkSent'))}</div>
+        <div class="alert alert-error" data-form-error hidden role="alert"></div><div class="alert alert-ok" data-form-ok hidden role="status">${esc(t('account.linkSent'))}</div>
         <button class="btn btn-primary" type="submit"><span class="spinner" aria-hidden="true"></span><span>${esc(t('account.send'))}</span></button>
       </form>
     </div>

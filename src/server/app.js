@@ -1,35 +1,35 @@
 // API router — Web-standard Request → Response. Runs unchanged on Vercel
 // (api/index.js) and in the local dev server (src/server/dev.js).
 import { HttpError, json, html, text, redirect, readJson, readForm, v } from './http.js';
-import { getSql, transaction } from './db.js';
+import { getSql } from './db.js';
 import { publicConfig, product, brand, site, shipping, subscription as subConfig, payments as payConfig, formatMoney } from '../config/commerce.js';
 import { quote } from './pricing.js';
-import { startCheckout, getOrderByNumber, publicOrder } from './orders.js';
+import { startCheckout, getOrderByToken, publicOrder } from './orders.js';
 import { processPaymentWebhook } from './webhooks.js';
 import { paymentProvider, isEmulator } from './payments/provider.js';
 import { setWebhookDeliverer } from './payments/emulator.js';
 import { cancelSubscription, subscriptionSummary, reconcileSubscriptions } from './subscriptions.js';
-import { ensureCsrfCookie, verifyCsrf, rateLimit, createSession, readSession, requireSession, sessionCookieHeaders, newLoginToken, hashToken, requireAdmin, requireCron } from './security.js';
+import { ensureCsrfCookie, verifyCsrf, rateLimit, createSession, readSession, requireSession, sessionCookieHeaders, newLoginToken, hashToken, requireCron } from './security.js';
 import { sendOnce } from './email/index.js';
 import { emulatorCheckoutPage } from './payments/emulator-page.js';
 import { adminRoutes } from './admin.js';
+import { localeForCountry, pickLocale, href, translator } from '../web/i18n/index.js';
 
 // Emulator webhooks are delivered in-process (there is no public URL locally).
 setWebhookDeliverer((id) => processPaymentWebhook(id).catch((e) => console.error('emulated webhook failed', e)));
 
 const routes = [];
 const route = (method, pattern, handler) => routes.push({ method, pattern: new RegExp(`^${pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)')}/?$`), handler });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ---------------------------------------------------------------------------
 route('GET', '/api/health', async () => {
-  const sql = getSql();
-  await sql`SELECT 1`;
-  return json({ ok: true, provider: payConfig.provider, mode: paymentProvider().mode });
+  await getSql()`SELECT 1`;
+  return json({ ok: true });
 });
 
 /** Country → language suggestion (fallback for when the Vercel middleware did not run, e.g. locally). */
 route('GET', '/api/geo', async (req) => {
-  const { localeForCountry } = await import('../web/i18n/index.js');
   const country = (req.headers.get('x-vercel-ip-country') || process.env.DEV_GEO_COUNTRY || '').toUpperCase();
   return json({ country: country || null, locale: localeForCountry(country) }, { headers: { 'cache-control': 'private, no-store' } });
 });
@@ -40,6 +40,7 @@ route('GET', '/api/config', async (req) => {
 });
 
 route('POST', '/api/quote', async (req) => {
+  await rateLimit(req, 'quote', { limit: 120, windowSec: 60 });
   const body = await readJson(req);
   const q = quote({ mode: body.mode, quantity: v.int(body.quantity, { min: 1, max: product.maxQuantity, name: 'quantity' }), loyaltyLevel: 1, country: body.country || shipping.defaultCountry });
   const { snapshot, ...pub } = q;
@@ -50,27 +51,29 @@ route('POST', '/api/checkout', async (req) => {
   verifyCsrf(req);
   await rateLimit(req, 'checkout', { limit: 10, windowSec: 300 });
   const body = await readJson(req);
-  const result = await startCheckout(body, { request: req });
+  const result = await startCheckout(body);
   const sql = getSql();
   await sql`INSERT INTO analytics_events (name, order_id, payload) VALUES ('begin_checkout', ${result.orderId}, ${sql.json({ mode: body.mode, quantity: body.quantity })})`;
-  return json({ ok: true, orderNumber: result.orderNumber, checkoutUrl: result.checkoutUrl });
+  return json({ ok: true, orderNumber: result.orderNumber, accessToken: result.accessToken, checkoutUrl: result.checkoutUrl });
 });
 
-/** Order status for the confirmation page. Handles "webhook later than redirect" by fetching once. */
+/** Order status for the confirmation page. Capability URL (number + token). Handles "webhook later than redirect" by verifying with the provider. */
 route('GET', '/api/orders/:number', async (req, { params, url }) => {
   await rateLimit(req, 'order-status', { limit: 60, windowSec: 60 });
-  const email = v.email(url.searchParams.get('e') || '');
-  let order = await getOrderByNumber(params.number, email);
+  let order = await getOrderByToken(params.number, url.searchParams.get('t') || '');
   if (!order) throw new HttpError(404, 'Order not found');
   if (['open', 'pending', 'authorized'].includes(order.payment_status) && order.mollie_payment_id) {
-    // Do not trust the redirect: verify with the provider (idempotent — same path as the webhook).
     await processPaymentWebhook(order.mollie_payment_id).catch((e) => console.error('status refresh failed', e.message));
-    order = await getOrderByNumber(params.number, email);
+    order = await getOrderByToken(params.number, url.searchParams.get('t') || '');
   }
-  let retryUrl = null;
-  if (['failed', 'canceled', 'expired'].includes(order.payment_status)) retryUrl = `/checkout?retry=${order.number}`;
+  const failed = ['failed', 'canceled', 'expired'].includes(order.payment_status);
   const [pay] = await getSql()`SELECT method FROM payments WHERE order_id = ${order.id} ORDER BY created_at DESC LIMIT 1`;
-  return json({ order: publicOrder(order, { method: pay?.method || null, retryUrl, interval: subConfig.interval }) });
+  return json({ order: publicOrder(order, {
+    method: pay?.method || null,
+    retryUrl: failed ? `${href('/checkout', order.locale)}?retry=${order.number}&t=${order.access_token}` : null,
+    // Lets the checkout page rebuild the cart for a retry (same mode and quantity).
+    retry: failed ? { mode: order.order_type === 'one_time' ? 'one_time' : 'subscription', quantity: order.quantity, email: order.email, address: order.shipping_address } : null,
+  }) });
 });
 
 // --- Mollie webhook ----------------------------------------------------------
@@ -91,8 +94,7 @@ route('POST', '/api/webhooks/mollie', async (req) => {
 // --- Emulator (dev/test only) ---------------------------------------------------
 route('GET', '/api/emulator/checkout', async (req, { url }) => {
   if (!isEmulator()) throw new HttpError(404, 'Not found');
-  const pp = paymentProvider();
-  const payment = await pp.getPayment(url.searchParams.get('id') || '');
+  const payment = await paymentProvider().getPayment(url.searchParams.get('id') || '');
   return html(emulatorCheckoutPage(payment));
 });
 route('POST', '/api/emulator/checkout', async (req) => {
@@ -119,27 +121,47 @@ route('POST', '/api/auth/request', async (req) => {
   await rateLimit(req, 'auth', { limit: 5, windowSec: 600 });
   const body = await readJson(req);
   const email = v.email(body.email);
+  const locale = pickLocale(body.locale) || 'en';
   const sql = getSql();
-  const [customer] = await sql`SELECT id FROM customers WHERE email = ${email}`;
+  const [customer] = await sql`SELECT id, locale FROM customers WHERE email = ${email}`;
   // Always respond the same way (no account enumeration). Only send when the customer exists.
   if (customer) {
     const { token, hash } = newLoginToken();
     await sql`INSERT INTO login_tokens (token_hash, email, expires_at) VALUES (${hash}, ${email}, now() + interval '15 minutes')`;
-    const link = `${site.baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}`;
-    await sendOnce(`magic:${hash}`, 'magicLink', { to: email, link });
+    const link = `${site.baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}&l=${locale}`;
+    await sendOnce(`magic:${hash}`, 'magicLink', { to: email, locale, link });
   }
-  return json({ ok: true, message: 'If an account exists for this e-mail, a sign-in link is on its way.' });
+  return json({ ok: true });
 });
 
+/**
+ * The e-mailed link is a GET that only shows a confirmation page; the token is
+ * consumed by a POST from that page (auto-submitted). Link scanners that prefetch
+ * GETs therefore cannot burn the one-time token.
+ */
 route('GET', '/api/auth/verify', async (req, { url }) => {
   const token = url.searchParams.get('token') || '';
+  const locale = pickLocale(url.searchParams.get('l')) || 'en';
+  const t = translator(locale);
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(token)) return redirect(`${href('/account', locale)}?error=link`, 303);
+  return html(`<!doctype html><html lang="${t.meta.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(t('email.magic.button'))} · RYNSE</title>
+<style>body{margin:0;background:#070d1c;color:#f3eee2;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}main{text-align:center;padding:32px}button{background:#e2c272;color:#0a1428;border:0;border-radius:6px;font:inherit;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:16px 28px;cursor:pointer}</style></head>
+<body><main><p style="font-weight:900;letter-spacing:.08em;color:#e2c272;font-size:22px">RYNSE</p><form method="post" action="/api/auth/consume" id="f"><input type="hidden" name="token" value="${esc(token)}"><input type="hidden" name="l" value="${locale}"><button type="submit">${esc(t('email.magic.button'))}</button></form></main>
+<script>document.getElementById('f').submit();</script></body></html>`);
+});
+
+route('POST', '/api/auth/consume', async (req) => {
+  await rateLimit(req, 'auth-consume', { limit: 20, windowSec: 600 });
+  const form = await readForm(req);
+  const token = form.get('token') || '';
+  const locale = pickLocale(form.get('l')) || 'en';
   const sql = getSql();
   const [row] = await sql`UPDATE login_tokens SET used_at = now() WHERE token_hash = ${hashToken(token)} AND used_at IS NULL AND expires_at > now() RETURNING email`;
-  if (!row) return redirect('/account?error=link', 303);
+  if (!row) return redirect(`${href('/account', locale)}?error=link`, 303);
   const [customer] = await sql`SELECT id, email FROM customers WHERE email = ${row.email}`;
-  if (!customer) return redirect('/account?error=link', 303);
+  if (!customer) return redirect(`${href('/account', locale)}?error=link`, 303);
   const session = createSession({ customerId: customer.id, email: customer.email });
-  return redirect('/account', 303, sessionCookieHeaders(req, session));
+  return redirect(href('/account', locale), 303, sessionCookieHeaders(req, session));
 });
 
 route('POST', '/api/auth/logout', async (req) => {
@@ -158,7 +180,7 @@ route('GET', '/api/account', async (req) => {
   return json({
     signedIn: true,
     customer: { email: customer.email, name: customer.name, since: customer.created_at },
-    orders: orders.map((o) => publicOrder(o)),
+    orders: orders.map((o) => publicOrder(o, { accessToken: o.access_token })),
     subscription: await subscriptionSummary(customer.id),
   });
 });
@@ -167,7 +189,7 @@ route('POST', '/api/account/subscription/cancel', async (req) => {
   verifyCsrf(req);
   const session = requireSession(req);
   const body = await readJson(req);
-  const sub = await cancelSubscription(session.customerId, v.str(body.subscriptionId, { min: 10, max: 60, name: 'subscriptionId' }), 'customer');
+  const sub = await cancelSubscription(session.customerId, v.uuid(body.subscriptionId, 'subscriptionId'), 'customer');
   return json({ ok: true, status: sub.status });
 });
 
@@ -181,18 +203,23 @@ route('POST', '/api/contact', async (req) => {
   const name = v.str(body.name || '', { max: 120, name: 'Name' });
   if (body.website) return json({ ok: true }); // honeypot
   const sql = getSql();
-  await sql`INSERT INTO analytics_events (name, payload) VALUES ('contact_message', ${sql.json({ email, name, message })})`;
-  await sendOnce(`contact:${Date.now()}:${email}`, 'contactMessage', { to: brand.supportEmail, fromEmail: email, name, message }).catch((e) => console.error('contact mail failed', e.message));
+  await sql`INSERT INTO contact_messages (email, name, message) VALUES (${email}, ${name || null}, ${message})`;
+  await sendOnce(`contact:${Date.now()}:${email}`, 'contactMessage', { to: brand.supportEmail, locale: 'en', fromEmail: email, name, message }).catch((e) => console.error('contact mail failed', e.message));
   return json({ ok: true });
 });
 
-// --- Analytics (server-side copy, consent-aware) ---------------------------------------
+// --- Analytics (server-side copy of a few e-commerce events; no PII, no cookies) --------
+const ALLOWED_EVENTS = new Set(['add_to_cart', 'begin_checkout', 'purchase', 'subscription_selection', 'view_item', 'select_item', 'remove_from_cart', 'view_cart', 'add_payment_info']);
+const ALLOWED_PARAMS = new Set(['currency', 'value', 'quantity', 'item_variant', 'payment_type', 'transaction_id', 'shipping']);
 route('POST', '/api/events', async (req) => {
-  const body = await readJson(req, { maxBytes: 8 * 1024 });
+  await rateLimit(req, 'events', { limit: 60, windowSec: 60 });
+  const body = await readJson(req, { maxBytes: 2 * 1024 });
   const name = v.str(body.name, { min: 2, max: 40, name: 'name' });
-  if (!/^[a-z_]+$/.test(name)) throw new HttpError(400, 'Invalid event name');
+  if (!ALLOWED_EVENTS.has(name)) return json({ ok: true }); // ignore unknown events silently
+  const params = {};
+  for (const [k, val] of Object.entries(body.params || {})) if (ALLOWED_PARAMS.has(k) && (typeof val === 'number' || (typeof val === 'string' && val.length <= 64))) params[k] = val;
   const sql = getSql();
-  await sql`INSERT INTO analytics_events (name, payload) VALUES (${name}, ${sql.json(body.params || {})})`;
+  await sql`INSERT INTO analytics_events (name, payload) VALUES (${name}, ${sql.json(params)})`;
   return json({ ok: true });
 });
 
@@ -203,6 +230,7 @@ route('GET', '/api/cron/daily', async (req) => {
   const sql = getSql();
   await sql`DELETE FROM login_tokens WHERE expires_at < now() - interval '1 day'`;
   await sql`DELETE FROM rate_limits WHERE window_start < now() - interval '1 day'`;
+  await sql`DELETE FROM analytics_events WHERE created_at < now() - interval '400 days'`;
   return json({ ok: true, report });
 });
 
@@ -221,19 +249,14 @@ export async function handle(request) {
       const res = await r.handler(request, { params: m.groups || {}, url });
       return withSecurityHeaders(res);
     }
-    if (url.pathname.startsWith('/api/')) {
-      // Method exists on another verb?
-      const exists = routes.some((r) => r.pattern.test(url.pathname));
-      return withSecurityHeaders(json({ error: exists ? 'Method not allowed' : 'Not found' }, { status: exists ? 405 : 404 }));
-    }
-    return withSecurityHeaders(json({ error: 'Not found' }, { status: 404 }));
+    const exists = routes.some((r) => r.pattern.test(url.pathname));
+    return withSecurityHeaders(json({ error: exists ? 'Method not allowed' : 'Not found' }, { status: exists ? 405 : 404 }));
   } catch (err) {
     if (err instanceof HttpError) {
       const headers = err.status === 429 ? { 'retry-after': String(err.extra.retryAfter || 60) } : {};
       return withSecurityHeaders(json({ error: err.message, ...err.extra }, { status: err.status, headers }));
     }
     if (err?.status && err?.body?.detail) {
-      // Payment provider validation error: surface a safe message.
       console.error('provider error', err.status, err.body);
       return withSecurityHeaders(json({ error: 'The payment provider rejected the request. Please try again.' }, { status: 502 }));
     }
