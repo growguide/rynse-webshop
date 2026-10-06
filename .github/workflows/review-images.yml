@@ -38,7 +38,7 @@ jobs:
               if u.lower().split('?')[0].endswith(('.mp4', '.webm', '.mov')):
                   open('clip.mp4', 'wb').write(data)
                   # 16-frame contact sheet (4x4) + the exact last frame
-                  subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', 'clip.mp4', '-vf', "select='not(mod(n\\,max(1\\,floor(N/16))))',scale=360:-2,tile=4x4", '-frames:v', '1', f'review/{i}-{name}-sheet.jpg'], check=True)
+                  subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', 'clip.mp4', '-vf', 'fps=3.2,scale=360:-2,tile=4x4', '-frames:v', '1', f'review/{i}-{name}-sheet.jpg'], check=True)
                   subprocess.run(['ffmpeg', '-v', 'error', '-y', '-sseof', '-0.05', '-i', 'clip.mp4', '-frames:v', '1', '-update', '1', '-vf', 'scale=720:-2', f'review/{i}-{name}-last.jpg'], check=True)
                   print(i, u, 'video')
               else:
