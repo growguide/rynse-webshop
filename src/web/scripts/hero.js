@@ -32,6 +32,7 @@
   }
   const fine = matchMedia('(pointer: fine)').matches;
   if (reduce || !fine) return;
+  if (stage.querySelector('[data-hero-video]')) return; // video stage: no parallax, the product stays put
   const layers = Array.from(stage.querySelectorAll('[data-depth]'));
   let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
   const tick = () => {
