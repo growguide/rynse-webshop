@@ -60,6 +60,13 @@ export function sachetSvg({ className = '', title = 'RYNSE cleansing wipe sachet
 </svg>`;
 }
 
+/** Responsive <picture> with AVIF + WebP sources from the images manifest. */
+export function picture(img, { sizes = '100vw', className = '', loading = 'lazy', fetchpriority } = {}) {
+  const attrs = `alt="${esc(img.alt || '')}" width="${img.width || ''}" height="${img.height || ''}" loading="${loading}" decoding="async"${fetchpriority ? ` fetchpriority="${fetchpriority}"` : ''}${className ? ` class="${className}"` : ''}`;
+  if (!img.srcset) return `<img src="${esc(img.src)}" ${attrs}>`;
+  return `<picture>${img.srcsetAvif ? `<source type="image/avif" srcset="${esc(img.srcsetAvif)}" sizes="${sizes}">` : ''}<source type="image/webp" srcset="${esc(img.srcset)}" sizes="${sizes}"><img src="${esc(img.src)}" srcset="${esc(img.srcset)}" sizes="${sizes}" ${attrs}></picture>`;
+}
+
 export function payBadges({ label = true, className = '' } = {}) {
   const items = [
     { src: '/assets/payment/ideal.svg', alt: 'iDEAL' },

@@ -72,9 +72,11 @@
     if (j >= frames.images.length || j === lastDrawn) return;
     const img = frames.images[j];
     const cw = canvas.width, ch = canvas.height, iw = img.width, ih = img.height;
-    const s = Math.max(cw / iw, ch / ih);
+    // Desktop: zoom slightly and anchor left so the hero sachet sits right of the copy column (matches the poster CSS).
+    const zoom = isDesktop() ? 1.15 : 1;
+    const s = Math.max(cw / iw, ch / ih) * zoom;
     const dw = iw * s, dh = ih * s;
-    const fx = isDesktop() ? 0.65 : 0.5, fy = isDesktop() ? 0.5 : 0.42; // focal point matches CSS object-position
+    const fx = isDesktop() ? 0.1 : 0.5, fy = isDesktop() ? 0.5 : 0.42; // focal point matches CSS object-position
     const dx = (cw - dw) * fx, dy = (ch - dh) * fy;
     ctx.drawImage(img, dx, dy, dw, dh);
     lastDrawn = j;

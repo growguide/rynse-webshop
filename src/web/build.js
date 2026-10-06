@@ -92,7 +92,7 @@ async function resolveImages() {
   const pick = (slot, alt, fallback) => {
     const m = manifest[slot];
     if (!m) return { ...fallback, alt, placeholder: true };
-    return { src: m.src, srcset: m.srcset, width: m.width, height: m.height, alt: m.alt || alt };
+    return { src: m.src, srcset: m.srcset, srcsetAvif: m.srcsetAvif || null, width: m.width, height: m.height, alt: m.alt || alt };
   };
   // Vector placeholder poster (navy studio + sachet) so the hero never ships empty.
   await mkdir(path.join(DIST, 'assets', 'img'), { recursive: true });
@@ -112,8 +112,8 @@ async function resolveImages() {
   const heroPoster = pick('hero-poster', 'RYNSE navy cleansing wipe sachet with gold wordmark floating in a dark studio', { src: ph169, width: 1600, height: 900 });
   const heroPosterMobile = pick('hero-poster-mobile', heroPoster.alt, { src: ph916, width: 900, height: 1600 });
   return {
-    heroPoster: heroPoster.src,
-    heroPosterMobile: heroPosterMobile.src,
+    heroPoster,
+    heroPosterMobile,
     heroPosterSquare: pick('hero-many', 'A dozen RYNSE sachets floating in a dark navy studio', { src: ph45, width: 800, height: 1000 }),
     heroManifest: existsSync(path.join(ASSETS, 'hero', 'manifest.json')) ? '/assets/hero/manifest.json' : '',
     packshot: pick('packshot', 'RYNSE box of 40 cleansing wipes with loose navy sachets', { src: ph45, width: 800, height: 1000 }),

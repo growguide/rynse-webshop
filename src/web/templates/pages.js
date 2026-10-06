@@ -1,5 +1,5 @@
 import { brand, product, shipping, subscription, loyalty, copy, payments } from '../../config/commerce.js';
-import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, payBadges, priceFmt } from './components.js';
+import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, payBadges, priceFmt, picture } from './components.js';
 import { layout, organizationLd, breadcrumbLd, faqLd } from './layout.js';
 
 const head = (eyebrow, title, lead) => `<div class="wrap page-head"><p class="eyebrow">${esc(eyebrow)}</p><h1 class="h2" style="margin-top:12px">${title}</h1>${lead ? `<p class="lead" style="margin-top:16px">${lead}</p>` : ''}</div>`;
@@ -14,7 +14,7 @@ ${head('Why RYNSE', 'Built for the moments <span class="serif gold">between.</sp
   <div class="why-item reveal"><span class="num">03</span><h3>Made for everyday life</h3><p>pH-balanced and alcohol-free. ${product.wipesPerPack} wipes per pack — enough for a month of real life.</p></div>
 </div></section>
 <section class="section"><div class="wrap final-grid">
-  <div class="final-visual reveal"><img src="${esc(images.heroPosterSquare.src)}" alt="${esc(images.heroPosterSquare.alt)}" loading="lazy" width="${images.heroPosterSquare.width || 1000}" height="${images.heroPosterSquare.height || 1250}"></div>
+  <div class="final-visual reveal">${picture(images.heroPosterSquare, { sizes: '(min-width: 900px) 45vw, 100vw' })}</div>
   <div class="reveal">
     <p class="eyebrow">What's in the pack</p>
     <h2 class="h2" style="margin:14px 0 18px">${product.wipesPerPack} wipes. <span class="serif gold">Zero fuss.</span></h2>

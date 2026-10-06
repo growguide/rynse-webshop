@@ -1,5 +1,5 @@
 import { brand, product, copy, subscription, loyalty } from '../../config/commerce.js';
-import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt } from './components.js';
+import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt, picture } from './components.js';
 import { layout, organizationLd, websiteLd, productLd, faqLd } from './layout.js';
 
 export function renderHome({ assets, images }) {
@@ -13,8 +13,10 @@ export function renderHome({ assets, images }) {
   <div class="hero-sticky">
     <div class="hero-visual" data-hero-visual>
       <picture>
-        <source media="(max-width: 899px)" srcset="${esc(images.heroPosterMobile)}">
-        <img class="hero-poster" src="${esc(images.heroPoster)}" alt="RYNSE navy cleansing wipe sachet with gold wordmark floating in a dark studio" fetchpriority="high" decoding="async" width="1600" height="900">
+        ${images.heroPosterMobile.srcsetAvif ? `<source media="(max-width: 899px)" type="image/avif" srcset="${esc(images.heroPosterMobile.srcsetAvif)}" sizes="100vw">` : ''}
+        <source media="(max-width: 899px)" type="image/webp" srcset="${esc(images.heroPosterMobile.srcset || images.heroPosterMobile.src)}" sizes="100vw">
+        ${images.heroPoster.srcsetAvif ? `<source type="image/avif" srcset="${esc(images.heroPoster.srcsetAvif)}" sizes="100vw">` : ''}
+        <img class="hero-poster" src="${esc(images.heroPoster.src)}" ${images.heroPoster.srcset ? `srcset="${esc(images.heroPoster.srcset)}" sizes="100vw"` : ''} alt="${esc(images.heroPoster.alt)}" fetchpriority="high" decoding="async" width="${images.heroPoster.width}" height="${images.heroPoster.height}">
       </picture>
       <canvas data-hero-canvas aria-hidden="true"></canvas>
       <div class="hero-float" data-hero-float aria-hidden="true">
@@ -59,7 +61,7 @@ export function renderHome({ assets, images }) {
     <h2 id="life-title" class="h2">No shower. <span class="serif gold">No problem.</span></h2>
   </div>
   <div class="life-track" data-life>
-    ${life.map(([label, img]) => `<figure class="life-card reveal" style="margin:0"><img src="${esc(img.src)}" ${img.srcset ? `srcset="${esc(img.srcset)}" sizes="(min-width: 1200px) 190px, (min-width: 768px) 30vw, 78vw"` : ''} alt="${esc(img.alt || label)}" loading="lazy" decoding="async" width="${img.width || 800}" height="${img.height || 1000}"><figcaption class="label">${esc(label)}</figcaption></figure>`).join('')}
+    ${life.map(([label, img]) => `<figure class="life-card reveal" style="margin:0">${picture(img, { sizes: '(min-width: 1200px) 190px, (min-width: 768px) 30vw, 78vw' })}<figcaption class="label">${esc(label)}</figcaption></figure>`).join('')}
   </div>
   <p class="life-words" aria-hidden="true"><span>Gym</span><span>Flight</span><span>Festival</span><span>Date</span><span class="serif">RYNSE.</span></p>
 </section>
@@ -84,7 +86,7 @@ export function renderHome({ assets, images }) {
 <section class="section final" id="get" aria-labelledby="final-title">
   <div class="wrap final-grid">
     <div class="final-visual reveal">
-      <img src="${esc(images.packshot.src)}" ${images.packshot.srcset ? `srcset="${esc(images.packshot.srcset)}" sizes="(min-width: 900px) 45vw, 100vw"` : ''} alt="${esc(images.packshot.alt)}" loading="lazy" decoding="async" width="${images.packshot.width || 800}" height="${images.packshot.height || 1000}">
+      ${picture(images.packshot, { sizes: '(min-width: 900px) 45vw, 100vw' })}
     </div>
     <div class="reveal">
       <p class="eyebrow">Get RYNSE</p>
