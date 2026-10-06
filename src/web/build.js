@@ -27,7 +27,7 @@ async function main() {
   await mkdir(path.join(DIST, 'assets', 'js'), { recursive: true });
 
   // --- static assets ---
-  for (const dir of ['fonts', 'brand', 'payment', 'img', 'hero']) {
+  for (const dir of ['fonts', 'brand', 'payment', 'img']) {
     const src = path.join(ASSETS, dir);
     if (existsSync(src)) await cp(src, path.join(DIST, 'assets', dir), { recursive: true });
   }

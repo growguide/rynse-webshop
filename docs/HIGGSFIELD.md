@@ -1,5 +1,7 @@
 # Higgsfield — hero production
 
+> **Status (2026-10-06):** the homepage hero now uses the static packshot stage (box + sachets, gold glow, pointer parallax) instead of the scroll-driven frame sequence — the sequence felt heavy in review. The frames are still in `src/web/assets/hero/` and the player in `docs/archive/hero-sequence.js`; to bring it back, restore that file to `src/web/scripts/hero.js`, add `'hero'` back to the asset copy list in `src/web/build.js`, and reinstate the `<canvas>` markup from git history (commit before "Redesign hero + lifestyle").
+
 The hero is a scroll-driven cinematic sequence rendered from a Higgsfield video.
 The site streams a WebP frame sequence into a `<canvas>` (poster first, then
 coarse keyframes, then the rest), so the page is interactive immediately and the

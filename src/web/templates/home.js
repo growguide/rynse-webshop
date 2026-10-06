@@ -1,5 +1,5 @@
 import { brand, product, loyalty } from '../../config/commerce.js';
-import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt, picture, split, intervalLabel } from './components.js';
+import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt, picture, split, intervalLabel, payBadges } from './components.js';
 import { layout, organizationLd, websiteLd, productLd, faqLd } from './layout.js';
 
 export function renderHome({ t, assets, images }) {
@@ -10,31 +10,31 @@ export function renderHome({ t, assets, images }) {
   const life = labels.map((label, i) => [label, { ...images.life[i], alt: t(`life.alt.${i + 1}`) }]);
   const heroAlt = t('hero.alt');
   const main = `
-<section class="hero" id="top" data-hero data-frames="${esc(images.heroManifest || '')}">
-  <div class="hero-sticky">
-    <div class="hero-visual" data-hero-visual>
-      <picture>
-        ${images.heroPosterMobile.srcsetAvif ? `<source media="(max-width: 899px)" type="image/avif" srcset="${esc(images.heroPosterMobile.srcsetAvif)}" sizes="100vw">` : ''}
-        <source media="(max-width: 899px)" type="image/webp" srcset="${esc(images.heroPosterMobile.srcset || images.heroPosterMobile.src)}" sizes="100vw">
-        ${images.heroPoster.srcsetAvif ? `<source type="image/avif" srcset="${esc(images.heroPoster.srcsetAvif)}" sizes="100vw">` : ''}
-        <img class="hero-poster" src="${esc(images.heroPoster.src)}" ${images.heroPoster.srcset ? `srcset="${esc(images.heroPoster.srcset)}" sizes="100vw"` : ''} alt="${esc(heroAlt)}" fetchpriority="high" decoding="async" width="${images.heroPoster.width}" height="${images.heroPoster.height}">
-      </picture>
-      <canvas data-hero-canvas aria-hidden="true"></canvas>
-      <div class="hero-float" data-hero-float aria-hidden="true">
-        ${[0, 1, 2, 3, 4, 5].map((i) => `<div class="sachet s${i}" data-depth="${(0.3 + i * 0.14).toFixed(2)}">${sachetSvg({ title: '' })}</div>`).join('')}
-      </div>
-    </div>
-    <div class="wrap hero-content">
+<section class="hero" id="top" data-hero>
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="wrap hero-grid">
+    <div class="hero-content">
       <p class="eyebrow reveal is-in">${esc(t('hero.eyebrow', { n }))}</p>
       <h1 class="display hero-title">${esc(t('hero.titleA'))}<br><span class="serif">${esc(t('hero.titleB'))}</span></h1>
       <p class="hero-sub">${esc(t('hero.sub', { n }))}</p>
       <div class="hero-cta-row">
-        <a class="btn btn-primary" href="#buy" data-scroll-buy>${esc(t('cta.get'))}</a>
+        <a class="btn btn-primary btn-lg" href="#buy" data-scroll-buy>${esc(t('cta.get'))}</a>
         <div class="hero-price">${priceFmt(product.priceCents, t)}<small>${esc(t('product.inclVat'))}</small>${placeholderFlag('RYNSE_PRICE_CENTS')}</div>
       </div>
       <a class="hero-options link" href="#buy" data-scroll-options>${esc(t('hero.options'))}</a>
+      <ul class="hero-facts" aria-label="${esc(t('hero.eyebrow', { n }))}">
+        ${[2, 3, 4].map((i) => `<li>${esc(t(`facts.${i}`))}</li>`).join('')}
+      </ul>
+      ${payBadges(t, { label: false, className: 'hero-pay' })}
     </div>
-    <div class="hero-scroll-hint">${esc(t('hero.scroll'))}</div>
+    <div class="hero-stage" data-hero-stage aria-hidden="false">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-pack" data-depth="0.6">
+        ${picture({ ...images.packshot, alt: t('packshot.alt') }, { sizes: '(min-width: 900px) 48vw, 92vw', loading: 'eager', fetchpriority: 'high' })}
+      </div>
+      <div class="hero-sachet hs-1" data-depth="1.4" aria-hidden="true">${sachetSvg({ title: '' })}</div>
+      <div class="hero-sachet hs-2" data-depth="1" aria-hidden="true">${sachetSvg({ title: '' })}</div>
+    </div>
   </div>
 </section>
 
@@ -56,14 +56,16 @@ export function renderHome({ t, assets, images }) {
 </section>
 
 <section class="section life" aria-labelledby="life-title">
-  <div class="wrap section-head reveal">
-    <p class="eyebrow">${esc(t('life.eyebrow'))}</p>
-    <h2 id="life-title" class="h2">${esc(t('life.titleA'))} <span class="serif gold">${esc(t('life.titleB'))}</span></h2>
+  <div class="wrap">
+    <div class="section-head reveal life-head">
+      <p class="eyebrow">${esc(t('life.eyebrow'))}</p>
+      <h2 id="life-title" class="h2">${esc(t('life.titleA'))} <span class="serif gold">${esc(t('life.titleB'))}</span></h2>
+      <p class="life-words" aria-hidden="true">${words.map((w) => `<span>${esc(w)}</span>`).join('')}<span class="serif">RYNSE.</span></p>
+    </div>
+    <div class="life-grid" data-life>
+      ${life.map(([label, img], i) => `<figure class="life-card reveal" style="margin:0">${picture(img, { sizes: '(min-width: 1200px) 380px, (min-width: 700px) 31vw, 84vw' })}<figcaption><span class="num">0${i + 1}</span><span class="label">${esc(label)}</span></figcaption></figure>`).join('')}
+    </div>
   </div>
-  <div class="life-track" data-life>
-    ${life.map(([label, img]) => `<figure class="life-card reveal" style="margin:0">${picture(img, { sizes: '(min-width: 1200px) 190px, (min-width: 768px) 30vw, 78vw' })}<figcaption class="label">${esc(label)}</figcaption></figure>`).join('')}
-  </div>
-  <p class="life-words" aria-hidden="true">${words.map((w) => `<span>${esc(w)}</span>`).join('')}<span class="serif">RYNSE.</span></p>
 </section>
 
 <section class="section loyalty" id="loyalty" aria-labelledby="loyalty-title">
@@ -86,7 +88,7 @@ export function renderHome({ t, assets, images }) {
 <section class="section final" id="get" aria-labelledby="final-title">
   <div class="wrap final-grid">
     <div class="final-visual reveal">
-      ${picture({ ...images.packshot, alt: t('packshot.alt') }, { sizes: '(min-width: 900px) 45vw, 100vw' })}
+      ${picture({ ...images.heroPosterSquare, alt: t('hero.alt') }, { sizes: '(min-width: 900px) 45vw, 100vw' })}
     </div>
     <div class="reveal">
       <p class="eyebrow">${esc(t('final.eyebrow'))}</p>
