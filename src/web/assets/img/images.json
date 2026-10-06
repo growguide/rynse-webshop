@@ -48,11 +48,11 @@
     "alt": "RYNSE sachet, angled view"
   },
   "life-1": {
-    "src": "/assets/img/life-1-1200.webp",
-    "srcset": "/assets/img/life-1-480.webp 480w, /assets/img/life-1-800.webp 800w, /assets/img/life-1-1200.webp 1200w",
-    "srcsetAvif": "/assets/img/life-1-480.avif 480w, /assets/img/life-1-800.avif 800w, /assets/img/life-1-1200.avif 1200w",
-    "width": 1200,
-    "height": 1500,
+    "src": "/assets/img/life-1-800.webp",
+    "srcset": "/assets/img/life-1-480.webp 480w, /assets/img/life-1-800.webp 800w",
+    "srcsetAvif": "/assets/img/life-1-480.avif 480w, /assets/img/life-1-800.avif 800w",
+    "width": 800,
+    "height": 1000,
     "alt": "Man cooling down after a run on an Amsterdam canal bridge, holding a RYNSE sachet"
   },
   "life-2": {
@@ -72,19 +72,19 @@
     "alt": "Friends at a night festival on the Amsterdam waterfront, one holding a RYNSE sachet"
   },
   "life-4": {
-    "src": "/assets/img/life-4-1200.webp",
-    "srcset": "/assets/img/life-4-480.webp 480w, /assets/img/life-4-800.webp 800w, /assets/img/life-4-1200.webp 1200w",
-    "srcsetAvif": "/assets/img/life-4-480.avif 480w, /assets/img/life-4-800.avif 800w, /assets/img/life-4-1200.avif 1200w",
-    "width": 1200,
-    "height": 1500,
-    "alt": "Man on a bicycle along an Amsterdam canal at night with a RYNSE sachet in hand"
+    "src": "/assets/img/life-4-800.webp",
+    "srcset": "/assets/img/life-4-480.webp 480w, /assets/img/life-4-800.webp 800w",
+    "srcsetAvif": "/assets/img/life-4-480.avif 480w, /assets/img/life-4-800.avif 800w",
+    "width": 800,
+    "height": 1000,
+    "alt": "Man walking his bicycle along an Amsterdam canal at night with a RYNSE sachet in hand"
   },
   "life-5": {
-    "src": "/assets/img/life-5-1200.webp",
-    "srcset": "/assets/img/life-5-480.webp 480w, /assets/img/life-5-800.webp 800w, /assets/img/life-5-1200.webp 1200w",
-    "srcsetAvif": "/assets/img/life-5-480.avif 480w, /assets/img/life-5-800.avif 800w, /assets/img/life-5-1200.avif 1200w",
-    "width": 1200,
-    "height": 1500,
+    "src": "/assets/img/life-5-800.webp",
+    "srcset": "/assets/img/life-5-480.webp 480w, /assets/img/life-5-800.webp 800w",
+    "srcsetAvif": "/assets/img/life-5-480.avif 480w, /assets/img/life-5-800.avif 800w",
+    "width": 800,
+    "height": 1000,
     "alt": "Man on a cobbled Jordaan street at night before a date, holding a RYNSE sachet"
   },
   "life-6": {
