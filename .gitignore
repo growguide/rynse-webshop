@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.vercel
+assets-src/*.png
+assets-src/*.jpg
+assets-src/*.mp4
+tests/e2e/shots/
+*.log
