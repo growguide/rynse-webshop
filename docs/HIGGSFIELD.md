@@ -60,3 +60,11 @@ last frame = hero sachet alone again, which is exactly when the purchase panel s
 > Editorial lifestyle photograph, moody and premium, unmistakably Amsterdam: [scene — canal bridge after a run / Amsterdam Centraal platform at dusk / NDSM-wharf night festival / cycling home along a canal / cobbled Jordaan street before a date / pocket flat lay with canal lights]. [Subject] holds a small navy foil sachet with a metallic gold "RYNSE" wordmark, matching the attached reference design. Cinematic lighting with warm golden highlights and deep navy shadows, shallow depth of field, 50 mm lens, film-like grain, fashion-campaign aesthetic, no other visible brand logos, no extra text.
 
 Keep: navy + gold palette, one sachet in frame, no competing logos, elegant not sexual, unisex casting across the set.
+
+## Consistent lettering on multi-sachet images
+
+Generators drift on repeated text. Fix after the fact with an image edit (GPT Image 2.5, two `image_references`: the shot + the clean `sachet-front` render) and this prompt:
+
+> Edit the first image. Keep the composition, camera, lighting and every sachet position exactly as they are. Change ONLY the printed artwork: every sachet must carry the identical print shown on the second image — the bold metallic gold wordmark reading exactly "RYNSE" in heavy geometric sans-serif capitals, centered, with the small gold line "CLEANSING WIPE" directly underneath, same font, same proportions and gold tone on every sachet. No other text, no misspellings, no variations between sachets.
+
+Used on 2026-10-06 for `packshot` and `hero-many`. Review candidates with the "Fetch images for review" workflow (`asset-review` branch) when the CDN is not reachable from the build session.
