@@ -13,7 +13,7 @@
     "db:reset": "node tools/migrate.js --reset",
     "config:check": "node tools/check-config.js --strict",
     "hero:frames": "node tools/hero-frames.js",
-    "test": "node --test tests/",
+    "test": "node --test tests/*.test.js",
     "test:e2e": "python3 tests/e2e/run.py"
   },
   "dependencies": {},

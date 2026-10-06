@@ -150,7 +150,7 @@ export function renderAccount({ assets }) {
       </form>
     </div>
   </div>
-  <div data-acc-content hidden style="display:grid;gap:28px">
+  <div data-acc-content hidden class="stack">
     <div class="summary-card" data-acc-sub></div>
     <div><h2 class="h3" style="margin-bottom:14px">Orders</h2><div style="overflow:auto"><table class="table"><thead><tr><th>Order</th><th>Date</th><th>Type</th><th>Total</th><th>Payment</th><th>Fulfilment</th></tr></thead><tbody data-acc-orders></tbody></table></div></div>
     <div><button class="btn btn-ghost" type="button" data-logout>Sign out</button></div>
@@ -204,7 +204,7 @@ export function renderAdmin({ assets }) {
   const main = `${head('Admin', 'Orders &amp; <span class="serif gold">subscriptions</span>')}
 <section class="section-tight"><div class="wrap">
   <div data-admin-login class="summary-card" style="max-width:480px"><p class="small muted">Enter the admin token (ADMIN_TOKEN). It is kept in this tab only.</p><div class="field"><label for="adm-token">Admin token</label><input id="adm-token" type="password" autocomplete="off"></div><button class="btn btn-primary" type="button" data-admin-signin>Open admin</button><div class="alert alert-error" data-admin-error hidden></div></div>
-  <div data-admin-app hidden style="display:grid;gap:28px">
+  <div data-admin-app hidden class="stack">
     <div class="why-grid" data-admin-stats></div>
     <div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><h2 class="h3">Orders</h2><input data-admin-search placeholder="Search order / e-mail" style="margin-left:auto;min-height:40px;padding:8px 12px;background:rgba(16,29,58,.55);border:1px solid var(--line-soft);border-radius:6px;color:var(--cream)"><select data-admin-filter style="min-height:40px;padding:8px;background:rgba(16,29,58,.55);border:1px solid var(--line-soft);border-radius:6px;color:var(--cream)"><option value="">All</option><option value="paid">Paid</option><option value="unfulfilled">To ship</option><option value="shipped">Shipped</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select></div><div style="overflow:auto"><table class="table"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Type</th><th>Total</th><th>Payment</th><th>Fulfilment</th><th>Actions</th></tr></thead><tbody data-admin-orders></tbody></table></div></div>
     <div><h2 class="h3" style="margin-bottom:12px">Subscriptions</h2><div style="overflow:auto"><table class="table"><thead><tr><th>Customer</th><th>Status</th><th>Interval</th><th>Next payment</th><th>Loyalty</th><th>Failed</th><th>Actions</th></tr></thead><tbody data-admin-subs></tbody></table></div></div>

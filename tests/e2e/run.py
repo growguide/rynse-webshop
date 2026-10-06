@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Browser e2e: full purchase flow + responsive checks against the local dev server (emulator).
+Usage: python3 tests/e2e/run.py [base_url]   (default http://localhost:3000)"""
+import asyncio, sys, json, os, time
+from playwright.async_api import async_playwright
+
+BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:3000'
+SHOTS = os.path.join(os.path.dirname(__file__), 'shots'); os.makedirs(SHOTS, exist_ok=True)
+VIEWPORTS = [('small-phone', 320, 568), ('phone', 390, 844), ('large-phone', 430, 932), ('tablet', 820, 1180), ('laptop', 1280, 800), ('desktop', 1440, 900), ('wide', 1920, 1080)]
+results = []
+
+def ok(name, cond, detail=''):
+    results.append((name, bool(cond), detail)); print(('PASS ' if cond else 'FAIL ') + name + (f' — {detail}' if detail and not cond else ''))
+
+async def purchase_flow(p, mode, w, h, label):
+    b = await p.chromium.launch()
+    ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600)
+    pg = await ctx.new_page(); errors = []
+    pg.on('pageerror', lambda e: errors.append(str(e)))
+    pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
+    await pg.goto(BASE + '/', wait_until='networkidle')
+    panel = pg.locator('[data-purchase="hero"]')
+    if mode == 'subscription':
+        await panel.locator('input[value="subscription"]').check(force=True)
+        await pg.wait_for_timeout(300)
+        ok(f'{label}: subscription note visible', await panel.locator('[data-sub-note]').is_visible())
+    await panel.locator('[data-qty="1"]').click()
+    await panel.locator('[data-add]').click()
+    await pg.wait_for_selector('[data-cart].is-open', timeout=5000)
+    ok(f'{label}: cart drawer opens', True)
+    await pg.wait_for_timeout(500)
+    totals = await pg.locator('[data-cart-totals]').inner_text()
+    ok(f'{label}: cart shows totals', '€' in totals, totals)
+    await pg.locator('[data-cart-checkout]').click()
+    await pg.wait_for_url('**/checkout', timeout=5000)
+    await pg.wait_for_timeout(600)
+    ok(f'{label}: checkout summary mode', mode.replace('_', ' ').split()[0].lower() in (await pg.locator('[data-sum-mode]').inner_text()).lower())
+    if mode == 'subscription':
+        ok(f'{label}: subscription terms shown before payment', await pg.locator('[data-sub-terms]').is_visible())
+    await pg.fill('#f-email', f'e2e-{int(time.time())}-{label}@example.com'); await pg.fill('#f-name', 'E2E Tester'); await pg.fill('#f-street', 'Herengracht 10'); await pg.fill('#f-postal', '1015 BK'); await pg.fill('#f-city', 'Amsterdam')
+    # submit without terms → validation
+    await pg.locator('[data-pay]').click(); await pg.wait_for_timeout(300)
+    ok(f'{label}: terms validation blocks submit', '/checkout' in pg.url)
+    await pg.check('input[name="terms"]', force=True)
+    await pg.locator('[data-pay]').click()
+    await pg.wait_for_url('**/api/emulator/checkout**', timeout=10000)
+    ok(f'{label}: redirected to hosted checkout', True)
+    await pg.select_option('select[name="status"]', 'paid')
+    await pg.select_option('select[name="webhookDelay"]', '4000')  # late webhook
+    await pg.click('button[type=submit]')
+    await pg.wait_for_url('**/order/**', timeout=10000)
+    await pg.wait_for_function("document.querySelector('[data-order-title]') && document.querySelector('[data-order-title]').innerText.includes('Thank you')", timeout=15000)
+    ok(f'{label}: order page confirms payment (late webhook handled)', True)
+    await pg.screenshot(path=f'{SHOTS}/order-{label}.png')
+    cart = await pg.evaluate("localStorage.getItem('rynse:cart')")
+    ok(f'{label}: cart cleared after purchase', cart in (None, 'null'))
+    ok(f'{label}: no console/page errors', not errors, '; '.join(errors)[:300])
+    await b.close()
+
+async def responsive(p):
+    for name, w, h in VIEWPORTS:
+        b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600); pg = await ctx.new_page()
+        errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
+        for path in ['/', '/checkout', '/faq', '/subscription']:
+            await pg.goto(BASE + path, wait_until='networkidle')
+            overflow = await pg.evaluate('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1')
+            ok(f'{name} {path}: no horizontal overflow', not overflow)
+            if path == '/':
+                await pg.screenshot(path=f'{SHOTS}/home-{name}.png')
+                # sticky CTA appears after scrolling past the purchase panel on mobile
+                if w < 900:
+                    await pg.evaluate('window.scrollTo(0, document.body.scrollHeight * 0.6)'); await pg.wait_for_timeout(500)
+                    ok(f'{name}: sticky mobile CTA visible', await pg.locator('[data-sticky]').evaluate("el => el.classList.contains('is-visible')"))
+                # tap targets ≥ 44px for primary CTA
+                box = await pg.locator('[data-purchase="hero"] [data-add]').bounding_box()
+                ok(f'{name}: primary CTA ≥ 44px tall', box and box['height'] >= 44)
+                h1 = await pg.locator('h1').bounding_box()
+                ok(f'{name}: headline inside viewport width', h1 and h1['x'] >= 0 and h1['x'] + h1['width'] <= w + 1)
+        ok(f'{name}: no page errors', not errors, '; '.join(errors)[:200])
+        await b.close()
+
+async def links(p):
+    b = await p.chromium.launch(); pg = await (await b.new_context()).new_page()
+    seen = set(); broken = []
+    for path in ['/', '/why-rynse', '/faq', '/subscription', '/contact', '/checkout', '/account', '/privacy', '/cookies', '/terms', '/shipping-returns']:
+        await pg.goto(BASE + path)
+        hrefs = await pg.evaluate("Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))")
+        for h in hrefs:
+            if not h or h.startswith(('http', 'mailto:', '#', 'tel:')): continue
+            u = h.split('#')[0].split('?')[0]
+            if u in seen or not u: continue
+            seen.add(u)
+            r = await pg.request.get(BASE + u)
+            if r.status >= 400: broken.append(f'{u} ({r.status}) on {path}')
+    ok('no broken internal links', not broken, ', '.join(broken))
+    for u in ['/sitemap.xml', '/robots.txt', '/llms.txt', '/favicon.svg', '/site.webmanifest', '/assets/payment/ideal.svg']:
+        r = await pg.request.get(BASE + u); ok(f'{u} served', r.status == 200)
+    r = await pg.request.get(BASE + '/does-not-exist'); ok('404 page', r.status == 404 and 'Nothing' in await r.text())
+    await b.close()
+
+async def seo(p):
+    b = await p.chromium.launch(); pg = await (await b.new_context()).new_page()
+    await pg.goto(BASE + '/')
+    ld = await pg.evaluate("Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')).map(s => JSON.parse(s.textContent))")
+    types = [t.get('@type') for x in ld for t in (x if isinstance(x, list) else [x])]
+    ok('JSON-LD Organization/WebSite/Product/FAQPage present', all(t in types for t in ['Organization', 'WebSite', 'Product', 'FAQPage']), str(types))
+    prod = [t for x in ld for t in (x if isinstance(x, list) else [x]) if t.get('@type') == 'Product'][0]
+    ok('Product JSON-LD has no price while price is not final', 'offers' not in prod)
+    ok('single H1', await pg.locator('h1').count() == 1)
+    ok('meta description', len(await pg.get_attribute('meta[name=description]', 'content') or '') > 50)
+    ok('canonical', bool(await pg.get_attribute('link[rel=canonical]', 'href')))
+    ok('og:image', bool(await pg.get_attribute('meta[property="og:image"]', 'content')))
+    imgs = await pg.evaluate("Array.from(document.images).filter(i => !i.alt && !i.closest('[aria-hidden=true]')).length")
+    ok('all images have alt', imgs == 0, f'{imgs} without alt')
+    await b.close()
+
+async def main():
+    async with async_playwright() as p:
+        await purchase_flow(p, 'one_time', 390, 844, 'mobile-onetime')
+        await purchase_flow(p, 'subscription', 1440, 900, 'desktop-subscription')
+        await responsive(p)
+        await links(p)
+        await seo(p)
+    failed = [r for r in results if not r[1]]
+    print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
+    sys.exit(1 if failed else 0)
+
+asyncio.run(main())
