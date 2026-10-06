@@ -4,7 +4,11 @@
 import { placeholders, payments, site } from '../src/config/commerce.js';
 
 const strict = process.argv.includes('--strict');
-const isProd = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+// RYNSE_DEMO=true turns the strict production guard off (placeholders + payment emulator allowed) so the
+// shop can be reviewed on a real Vercel URL before the commercial values are final. Remove it to go live.
+const demo = process.env.RYNSE_DEMO === 'true';
+const isProd = !demo && (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production');
+if (demo) console.log('RYNSE_DEMO=true — demo mode: placeholders and the payment emulator are allowed. Remove RYNSE_DEMO before going live.');
 const problems = [];
 
 if (placeholders.length) {

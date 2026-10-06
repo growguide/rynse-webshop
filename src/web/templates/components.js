@@ -10,7 +10,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.resolve(here, '..', 'assets');
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-export const isDev = process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production';
+export const isDev = process.env.RYNSE_DEMO === 'true' || (process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production');
 export const split = (s) => String(s).split('|');
 
 const wordmarkSvg = readFileSync(path.join(assetsDir, 'brand', 'rynse-wordmark.svg'), 'utf8');

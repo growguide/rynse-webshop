@@ -264,7 +264,7 @@ export function publicConfig() {
     payments: { methods: payments.methods, cardBrands: payments.cardBrands, provider: payments.provider },
     copy,
     analytics: site.analytics,
-    placeholders: process.env.NODE_ENV === 'production' ? [] : placeholders.map((p) => p.key),
+    placeholders: process.env.NODE_ENV === 'production' && process.env.RYNSE_DEMO !== 'true' ? [] : placeholders.map((p) => p.key),
   };
 }
 

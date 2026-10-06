@@ -6,7 +6,7 @@
   "framework": null,
   "cleanUrls": true,
   "regions": ["fra1"],
-  "functions": { "api/index.js": { "maxDuration": 30, "memory": 1024 } },
+  "functions": { "api/index.js": { "maxDuration": 30, "memory": 1024, "includeFiles": "db/migrations/**" } },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/order/:number", "destination": "/order/index.html" },

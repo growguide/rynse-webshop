@@ -8,9 +8,19 @@ import { publicOrder } from './orders.js';
 import { sendOnce } from './email/index.js';
 import { processPaymentWebhook } from './webhooks.js';
 import { cancelSubscription } from './subscriptions.js';
+import { runMigrations } from './migrate.js';
 
 export function adminRoutes(route) {
   const guard = async (req) => { await rateLimit(req, 'admin', { limit: 120, windowSec: 60 }); requireAdmin(req); };
+
+  // One-off schema setup/upgrade from the deployed function (no local DB access needed):
+  //   curl -X POST -H "authorization: Bearer $ADMIN_TOKEN" https://<site>/api/admin/migrate
+  // No rate limit here: the rate_limits table does not exist before the first migration.
+  route('POST', '/api/admin/migrate', async (req) => {
+    requireAdmin(req);
+    const result = await runMigrations(getSql());
+    return json({ ok: true, ...result });
+  });
 
   route('GET', '/api/admin/orders', async (req, { url }) => {
     await guard(req);

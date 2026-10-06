@@ -24,8 +24,19 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 // ---------------------------------------------------------------------------
 route('GET', '/api/health', async () => {
-  await getSql()`SELECT 1`;
-  return json({ ok: true });
+  // Reports what is still missing for a working deployment (safe to expose: no secrets, only booleans).
+  const checks = { database: 'ok', migrations: 'ok', payments: process.env.PAYMENT_PROVIDER || 'emulator', email: process.env.EMAIL_PROVIDER || 'log', demo: process.env.RYNSE_DEMO === 'true' };
+  if (!process.env.DATABASE_URL) { checks.database = 'DATABASE_URL not set'; checks.migrations = 'n/a'; }
+  else {
+    try {
+      const sql = getSql();
+      await sql`SELECT 1`;
+      const [t] = await sql`SELECT to_regclass('public.orders') AS t`;
+      if (!t?.t) checks.migrations = 'not applied — POST /api/admin/migrate with the admin token';
+    } catch (e) { checks.database = `error: ${e.message}`; checks.migrations = 'n/a'; }
+  }
+  const ok = checks.database === 'ok' && checks.migrations === 'ok';
+  return json({ ok, checks }, { status: ok ? 200 : 503 });
 });
 
 /** Country → language suggestion (fallback for when the Vercel middleware did not run, e.g. locally). */
