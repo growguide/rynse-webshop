@@ -193,6 +193,30 @@
   });
   $('[data-scroll-options]')?.addEventListener('click', (e) => { e.preventDefault(); buy?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
+  // ---------- lifestyle slider (mobile): auto-advances card by card, pauses while the visitor touches/scrolls it ----------
+  (() => {
+    const track = $('[data-life]');
+    if (!track || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const mq = matchMedia('(max-width: 699px)');
+    let timer = 0, idle = 0, visible = false, index = 0;
+    const cards = () => $$('.life-card', track);
+    const go = () => {
+      const list = cards(); if (!list.length) return;
+      index = (index + 1) % list.length;
+      const target = list[index];
+      track.scrollTo({ left: target.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft || '0'), behavior: 'smooth' });
+    };
+    const start = () => { stop(); if (mq.matches && visible) timer = setInterval(go, 3200); };
+    const stop = () => { if (timer) clearInterval(timer); timer = 0; };
+    const pause = () => { stop(); clearTimeout(idle); idle = setTimeout(() => { // resync index to the card nearest to the current scroll position
+      const list = cards(); const x = track.scrollLeft; let best = 0, d = Infinity; list.forEach((c, i) => { const dd = Math.abs(c.offsetLeft - x); if (dd < d) { d = dd; best = i; } }); index = best; start(); }, 5000); };
+    ['touchstart', 'pointerdown', 'wheel'].forEach((ev) => track.addEventListener(ev, pause, { passive: true }));
+    track.addEventListener('scroll', () => { if (!timer) return; /* programmatic scroll: ignore */ }, { passive: true });
+    new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; visible ? start() : stop(); }, { threshold: 0.35 }).observe(track);
+    mq.addEventListener('change', start);
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  })();
+
   // ---------- reveals ----------
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const reveals = $$('.reveal');
