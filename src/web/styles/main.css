@@ -384,3 +384,17 @@ p { margin: 0; }
 /* dev-only banner */
 .dev-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 90; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding: 3px 12px; background: #ffd27a; color: #2b1f00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 22px; line-height: 16px; }
 .dev-banner ~ .nav { top: 22px; }
+
+/* ---------- language ---------- */
+.lang select { appearance: none; -webkit-appearance: none; background: transparent; border: 1px solid transparent; color: var(--cream-700); font: inherit; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; padding: 8px 22px 8px 8px; border-radius: 4px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23e2c272' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; }
+.lang select:hover { color: var(--gold); }
+.lang select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.lang select option { background: var(--navy-900); color: var(--cream); text-transform: none; letter-spacing: 0; }
+.nav-lang { display: none; }
+@media (min-width: 900px) { .nav-lang { display: block; } }
+.menu-lang select { font-size: 14px; padding-left: 0; }
+.footer-lang select { padding-left: 0; }
+.lang-suggest { position: fixed; left: var(--gutter); right: var(--gutter); top: calc(var(--nav-h) + 10px); z-index: 46; max-width: 520px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: var(--navy-900); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 12px 14px; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7); font-size: 14px; }
+.lang-suggest .btn { min-height: 38px; padding: 0 14px; font-size: 11px; }
+.lang-suggest[hidden] { display: none; }
+.dev-banner ~ .lang-suggest { top: calc(var(--nav-h) + 32px); }

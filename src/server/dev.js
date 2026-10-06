@@ -16,7 +16,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 
 function resolveStatic(pathname) {
   let p = decodeURIComponent(pathname);
-  if (/^\/order\/[^/]+$/.test(p)) p = '/order/index.html';
+  p = p.replace(/^(\/(?:nl|es))?\/order\/[^/]+$/, '$1/order/index.html');
   if (p === '/admin') p = '/admin/index.html';
   const candidates = [p, `${p}.html`, path.posix.join(p, 'index.html')];
   for (const c of candidates) {

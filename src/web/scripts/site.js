@@ -4,7 +4,10 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const CFG = window.__RYNSE__ || {};
-  const fmt = (cents) => new Intl.NumberFormat('nl-NL', { style: 'currency', currency: CFG.currency || 'EUR' }).format(cents / 100).replace(/ /g, ' ');
+  const I18N = CFG.i18n || {};
+  const T = (key, vars) => { let s = I18N[key] ?? key; if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)); return s; };
+  const P = CFG.prefix || ''; // locale URL prefix ('' | '/nl' | '/es')
+  const fmt = (cents) => new Intl.NumberFormat(CFG.numberLocale || 'nl-NL', { style: 'currency', currency: CFG.currency || 'EUR' }).format(cents / 100).replace(/\u00a0/g, ' ');
 
   // ---------- config (public, cached) ----------
   let config = null;
@@ -25,7 +28,7 @@
     if (!r.ok) { const e = new Error(data.error || 'Request failed'); e.status = r.status; e.data = data; throw e; }
     return data;
   };
-  window.RYNSE = { api, loadConfig, fmt };
+  window.RYNSE = { api, loadConfig, fmt, T, P, locale: CFG.locale || 'en' };
 
   // ---------- analytics (consent-aware, GA4-style event names) ----------
   const CONSENT_KEY = 'rynse:consent';
@@ -118,20 +121,20 @@
     const body = $('[data-cart-body]'); const foot = $('[data-cart-foot]'); const count = $('[data-cart-count]');
     const cart = readCart();
     count.textContent = cart ? cart.quantity : 0; count.classList.toggle('is-visible', !!cart);
-    if (!cart) { body.innerHTML = `<div class="cart-empty"><p>Your cart is empty.</p><p style="margin-top:14px"><a class="btn btn-primary" href="/#buy" data-cart-close-link>Get RYNSE</a></p></div>`; foot.hidden = true; $('[data-cart-close-link]', body)?.addEventListener('click', () => openCart(false)); return; }
+    if (!cart) { body.innerHTML = `<div class="cart-empty"><p>${T('cart.empty')}</p><p style="margin-top:14px"><a class="btn btn-primary" href="${P}/#buy" data-cart-close-link>${T('cart.get')}</a></p></div>`; foot.hidden = true; $('[data-cart-close-link]', body)?.addEventListener('click', () => openCart(false)); return; }
     const sachet = $('#tpl-cart-sachet')?.innerHTML || '';
     body.innerHTML = `
-      <div class="cart-item"><div class="thumb">${sachet}</div><div><div class="ci-title">RYNSE — 40 Wipes</div><div class="ci-mode">${cart.mode === 'subscription' ? `Subscription · every ${CFG.interval}` : 'One-time purchase'}</div><div class="ci-sub">40 individually wrapped wipes</div></div></div>
-      <div class="panel-row" style="margin-top:0"><div class="qty" role="group" aria-label="Quantity"><button type="button" data-cart-qty="-1" aria-label="Decrease">−</button><output>${cart.quantity}</output><button type="button" data-cart-qty="1" aria-label="Increase">+</button></div><button class="btn btn-ghost" type="button" data-cart-remove style="min-height:46px;padding:0 16px">Remove</button></div>
-      <div class="mode-switch" role="group" aria-label="Purchase type"><button type="button" data-cart-mode="one_time" aria-pressed="${cart.mode === 'one_time'}">One-time</button><button type="button" data-cart-mode="subscription" aria-pressed="${cart.mode === 'subscription'}">Subscribe &amp; save</button></div>
-      ${cart.mode === 'subscription' ? `<p class="small muted">Delivered and billed every ${CFG.interval}. Cancel anytime from your account. Loyalty benefits apply while the subscription runs.</p>` : ''}`;
+      <div class="cart-item"><div class="thumb">${sachet}</div><div><div class="ci-title">${T('cart.product')}</div><div class="ci-mode">${cart.mode === 'subscription' ? T('cart.subscription', { interval: CFG.interval }) : T('cart.oneTime')}</div><div class="ci-sub">${T('cart.wipes')}</div></div></div>
+      <div class="panel-row" style="margin-top:0"><div class="qty" role="group" aria-label="${T('cart.qty')}"><button type="button" data-cart-qty="-1" aria-label="${T('cart.decrease')}">−</button><output>${cart.quantity}</output><button type="button" data-cart-qty="1" aria-label="${T('cart.increase')}">+</button></div><button class="btn btn-ghost" type="button" data-cart-remove style="min-height:46px;padding:0 16px">${T('cart.remove')}</button></div>
+      <div class="mode-switch" role="group" aria-label="${T('cart.modeAria')}"><button type="button" data-cart-mode="one_time" aria-pressed="${cart.mode === 'one_time'}">${T('cart.oneTimeBtn')}</button><button type="button" data-cart-mode="subscription" aria-pressed="${cart.mode === 'subscription'}">${T('cart.subscribeBtn')}</button></div>
+      ${cart.mode === 'subscription' ? `<p class="small muted">${T('cart.subNote', { interval: CFG.interval })}</p>` : ''}`;
     foot.hidden = false;
     $$('[data-cart-qty]', body).forEach((b) => b.addEventListener('click', () => { const q = Math.max(1, Math.min(10, cart.quantity + Number(b.dataset.cartQty))); writeCart({ ...cart, quantity: q }); }));
     $('[data-cart-remove]', body)?.addEventListener('click', () => { track('remove_from_cart', cartParams()); writeCart(null); });
     $$('[data-cart-mode]', body).forEach((b) => b.addEventListener('click', () => { if (b.dataset.cartMode !== cart.mode) { writeCart({ ...cart, mode: b.dataset.cartMode }); if (b.dataset.cartMode === 'subscription') track('subscription_selection', { quantity: cart.quantity }); } }));
     try {
       const q = await getQuote(cart.mode, cart.quantity);
-      $('[data-cart-totals]').innerHTML = `<div><span>${cart.quantity} × RYNSE — 40 Wipes</span><span>${fmt(q.subtotalCents)}</span></div>${q.discountCents ? `<div><span>${q.discountLabel}</span><span>− ${fmt(q.discountCents)}</span></div>` : ''}<div><span>Shipping</span><span>${q.shippingCents ? fmt(q.shippingCents) : 'Free'}</span></div><div class="grand"><span>Total</span><span>${fmt(q.totalCents)}</span></div>`;
+      $('[data-cart-totals]').innerHTML = `<div><span>${T('cart.line', { n: cart.quantity })}</span><span>${fmt(q.subtotalCents)}</span></div>${q.discountCents ? `<div><span>${q.discountLabel}</span><span>− ${fmt(q.discountCents)}</span></div>` : ''}<div><span>${T('cart.shipping')}</span><span>${q.shippingCents ? fmt(q.shippingCents) : T('cart.free')}</span></div><div class="grand"><span>${T('cart.total')}</span><span>${fmt(q.totalCents)}</span></div>`;
     } catch { $('[data-cart-totals]').innerHTML = ''; }
   }
 
@@ -175,6 +178,25 @@
   const reveals = $$('.reveal');
   if (reduce || !('IntersectionObserver' in window)) reveals.forEach((el) => el.classList.add('is-in'));
   else { const ro = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); ro.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' }); reveals.forEach((el) => ro.observe(el)); }
+
+  // ---------- language: manual switcher (cookie wins) + IP-based suggestion fallback ----------
+  const LANG_COOKIE = 'rynse_lang';
+  const setLang = (l) => { document.cookie = `${LANG_COOKIE}=${l}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`; };
+  const pathFor = (l) => { const base = l === 'en' ? '' : `/${l}`; const p = CFG.path || '/'; const tail = location.pathname.replace(/^\/(nl|es)(?=\/|$)/, ''); const rest = p === '/order' ? tail : p; return `${base}${rest === '/' ? '/' : rest}${location.search}${location.hash}`; };
+  $$('[data-lang-select]').forEach((sel) => sel.addEventListener('change', () => { setLang(sel.value); location.assign(pathFor(sel.value)); }));
+  const hasLangCookie = /(^|; )rynse_lang=/.test(document.cookie);
+  const suggest = $('[data-lang-suggest]');
+  if (suggest && !hasLangCookie && (CFG.locale || 'en') === 'en' && !sessionStorage.getItem('rynse:lang-suggest')) {
+    // Vercel's middleware normally redirects before the page loads; this is the fallback when it did not run.
+    fetch('/api/geo').then((r) => r.json()).then((g) => {
+      if (!g.locale || g.locale === 'en') return;
+      $('[data-lang-suggest-text]').textContent = T('lang.suggest', { language: (CFG.languages || {})[g.locale] || g.locale });
+      const sw = $('[data-lang-suggest-switch]'); sw.textContent = T('lang.switch'); sw.addEventListener('click', () => { setLang(g.locale); location.assign(pathFor(g.locale)); });
+      const no = $('[data-lang-suggest-dismiss]'); no.textContent = T('lang.dismiss'); no.addEventListener('click', () => { setLang('en'); suggest.hidden = true; });
+      suggest.hidden = false;
+      sessionStorage.setItem('rynse:lang-suggest', '1');
+    }).catch(() => {});
+  }
 
   renderCart();
 })();

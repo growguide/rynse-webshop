@@ -5,25 +5,26 @@
   const R = window.RYNSE; if (!R) return;
   const number = decodeURIComponent(location.pathname.split('/').pop() || '');
   const email = new URLSearchParams(location.search).get('e') || '';
-  const fmt = R.fmt;
+  const fmt = R.fmt, T = R.T, P = R.P;
   const title = $('[data-order-title]'), msg = $('[data-order-message]'), icon = $('[data-status-icon]'), details = $('[data-order-details]'), actions = $('[data-order-actions]');
   const icons = {
     ok: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     pending: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     failed: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>',
   };
-  const label = { one_time: 'One-time purchase', subscription_first: 'Subscription — first delivery', subscription_renewal: 'Subscription delivery' };
+  const label = (k) => T(`order.type.${k}`);
   let attempts = 0;
   const render = (o) => {
     const final = ['paid', 'refunded', 'partially_refunded', 'failed', 'canceled', 'expired'].includes(o.paymentStatus);
     const paid = ['paid', 'refunded', 'partially_refunded'].includes(o.paymentStatus);
     const failed = ['failed', 'canceled', 'expired'].includes(o.paymentStatus);
-    title.innerHTML = paid ? 'Thank you. <span class="serif gold">You\'re set.</span>' : failed ? 'Payment <span class="serif gold">not completed.</span>' : 'Confirming your <span class="serif gold">payment…</span>';
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    title.innerHTML = paid ? `${esc(T('order.thanksA'))} <span class="serif gold">${esc(T('order.thanksB'))}</span>` : failed ? `${esc(T('order.failedA'))} <span class="serif gold">${esc(T('order.failedB'))}</span>` : `${esc(T('order.pendingA'))} <span class="serif gold">${esc(T('order.pendingB'))}</span>`;
     icon.className = `status-icon ${paid ? '' : failed ? 'failed' : 'pending'}`; icon.innerHTML = paid ? icons.ok : failed ? icons.failed : icons.pending;
-    msg.textContent = paid ? `Order ${o.number} is confirmed. A confirmation is on its way to your inbox and we're getting your pack ready.${o.orderType === 'subscription_first' ? ` Your subscription is active — the next pack arrives every ${o.interval}.` : ''}` : failed ? `Your payment was ${o.paymentStatus === 'canceled' ? 'cancelled' : o.paymentStatus}. Nothing has been charged. You can try again with another method.` : 'We are waiting for your bank or card provider to confirm. This usually takes a few seconds — you can leave this page; we\'ll e-mail you.';
+    msg.textContent = paid ? `${T('order.paidMsg', { number: o.number })}${o.orderType === 'subscription_first' ? T('order.paidSub', { interval: window.__RYNSE__.interval }) : ''}` : failed ? T('order.failedMsg', { status: T(`order.status.${o.paymentStatus}`) }) : T('order.pendingMsg');
     const a = o.shippingAddress || {};
-    details.innerHTML = [['Order', o.number], ['Type', label[o.orderType] || o.orderType], ['Items', `${o.quantity} × RYNSE — 40 Wipes`], o.discountCents ? [o.discountLabel, `− ${fmt(o.discountCents)}`] : null, ['Shipping', o.shippingCents ? fmt(o.shippingCents) : 'Free'], ['Total', fmt(o.totalCents)], ['Payment', `${o.paymentStatus}${o.method ? ` · ${o.method}` : ''}`], ['Delivery to', `${a.name}, ${a.street}, ${a.postalCode} ${a.city}`], o.trackingCode ? ['Tracking', o.trackingCode] : null].filter(Boolean).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
-    actions.innerHTML = failed ? `<a class="btn btn-primary" href="${o.retryUrl || '/checkout'}">Try again</a><a class="btn btn-ghost" href="/contact">Need help?</a>` : paid ? `<a class="btn btn-ghost" href="/account">Your account</a><a class="btn btn-ghost" href="/">Back to RYNSE</a>` : '';
+    details.innerHTML = [[T('order.l.order'), o.number], [T('order.l.type'), label(o.orderType)], [T('order.l.items'), T('cart.line', { n: o.quantity })], o.discountCents ? [o.discountLabel, `− ${fmt(o.discountCents)}`] : null, [T('order.l.shipping'), o.shippingCents ? fmt(o.shippingCents) : T('cart.free')], [T('order.l.total'), fmt(o.totalCents)], [T('order.l.payment'), `${T(`status.${o.paymentStatus}`)}${o.method ? ` · ${o.method}` : ''}`], [T('order.l.deliveryTo'), `${a.name}, ${a.street}, ${a.postalCode} ${a.city}`], o.trackingCode ? [T('order.l.tracking'), o.trackingCode] : null].filter(Boolean).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+    actions.innerHTML = failed ? `<a class="btn btn-primary" href="${P}${o.retryUrl || '/checkout'}">${esc(T('order.tryAgain'))}</a><a class="btn btn-ghost" href="${P}/contact">${esc(T('order.help'))}</a>` : paid ? `<a class="btn btn-ghost" href="${P}/account">${esc(T('order.account'))}</a><a class="btn btn-ghost" href="${P}/">${esc(T('order.back'))}</a>` : '';
     if (paid && sessionStorage.getItem('rynse:purchase-tracked') !== o.number) {
       sessionStorage.setItem('rynse:purchase-tracked', o.number);
       R.track('purchase', { transaction_id: o.number, currency: o.currency, value: o.totalCents / 100, shipping: o.shippingCents / 100, items: [{ item_id: 'RYNSE-40', item_name: 'RYNSE — 40 Wipes', quantity: o.quantity, price: o.unitPriceCents / 100, item_variant: o.orderType }] });
@@ -35,7 +36,7 @@
   const poll = async () => {
     try {
       const r = await fetch(`/api/orders/${encodeURIComponent(number)}?e=${encodeURIComponent(email)}`);
-      if (r.status === 404) { title.textContent = 'Order not found'; msg.textContent = 'We could not find this order. Check the link in your confirmation e-mail or sign in to your account.'; actions.innerHTML = '<a class="btn btn-ghost" href="/account">Account</a>'; return; }
+      if (r.status === 404) { title.textContent = T('order.notFound'); msg.textContent = T('order.notFoundMsg'); actions.innerHTML = `<a class="btn btn-ghost" href="${P}/account">${T('order.account')}</a>`; return; }
       const { order } = await r.json();
       const final = render(order);
       attempts += 1;

@@ -5,6 +5,7 @@ import { HttpError, v } from './http.js';
 import { quote, centsToMollie } from './pricing.js';
 import { paymentProvider } from './payments/provider.js';
 import { product, shipping, subscription, payments, site, brand } from '../config/commerce.js';
+import { pickLocale, LOCALE_META, href } from '../web/i18n/index.js';
 
 export async function nextOrderNumber(sql) {
   const [{ n }] = await sql`SELECT nextval('order_number_seq') AS n`;
@@ -24,10 +25,10 @@ export function validateAddress(a) {
   };
 }
 
-export async function upsertCustomer(sql, { email, name, marketingConsent = false }) {
+export async function upsertCustomer(sql, { email, name, marketingConsent = false, locale = 'en' }) {
   const [c] = await sql`
-    INSERT INTO customers (email, name, marketing_consent) VALUES (${email}, ${name}, ${marketingConsent})
-    ON CONFLICT (email) DO UPDATE SET name = COALESCE(EXCLUDED.name, customers.name), marketing_consent = customers.marketing_consent OR EXCLUDED.marketing_consent
+    INSERT INTO customers (email, name, marketing_consent, locale) VALUES (${email}, ${name}, ${marketingConsent}, ${locale})
+    ON CONFLICT (email) DO UPDATE SET name = COALESCE(EXCLUDED.name, customers.name), marketing_consent = customers.marketing_consent OR EXCLUDED.marketing_consent, locale = EXCLUDED.locale
     RETURNING *`;
   return c;
 }
@@ -36,7 +37,7 @@ export async function upsertCustomer(sql, { email, name, marketingConsent = fals
 export async function ensureProviderCustomer(sql, customer) {
   if (customer.mollie_customer_id) return customer.mollie_customer_id;
   const pp = paymentProvider();
-  const created = await pp.createCustomer({ name: customer.name || undefined, email: customer.email, locale: payments.locale, metadata: { customerId: customer.id } }, `cst-${customer.id}`);
+  const created = await pp.createCustomer({ name: customer.name || undefined, email: customer.email, locale: (LOCALE_META[customer.locale] || LOCALE_META.en).mollie, metadata: { customerId: customer.id } }, `cst-${customer.id}`);
   await sql`UPDATE customers SET mollie_customer_id = ${created.id} WHERE id = ${customer.id} AND mollie_customer_id IS NULL`;
   return created.id;
 }
@@ -52,13 +53,14 @@ export async function startCheckout(input, { request } = {}) {
   const name = v.str(input.name, { min: 2, max: 120, name: 'Full name' });
   const address = validateAddress({ ...input.address, name: input.address?.name || name });
   const method = input.method ? v.oneOf(input.method, payments.methods, 'payment method') : null;
+  const locale = pickLocale(input.locale) || 'en';
   if (mode === 'subscription' && !subscription.enabled) throw new HttpError(400, 'Subscriptions are not available right now');
 
   const q = quote({ mode, quantity, loyaltyLevel: 1, country: address.country });
   const pp = paymentProvider();
 
   return transaction(async (sql) => {
-    const customer = await upsertCustomer(sql, { email, name, marketingConsent: !!input.marketingConsent });
+    const customer = await upsertCustomer(sql, { email, name, marketingConsent: !!input.marketingConsent, locale });
     const number = await nextOrderNumber(sql);
     const orderType = mode === 'subscription' ? 'subscription_first' : 'one_time';
 
@@ -87,10 +89,10 @@ export async function startCheckout(input, { request } = {}) {
     const params = {
       amount: { currency: q.currency, value: centsToMollie(q.totalCents) },
       description: `${brand.name} order ${number}`,
-      redirectUrl: `${base}/order/${number}?e=${encodeURIComponent(email)}&r=1`,
-      cancelUrl: `${base}/checkout?canceled=${number}`,
+      redirectUrl: `${base}${href(`/order/${number}`, locale)}?e=${encodeURIComponent(email)}&r=1`,
+      cancelUrl: `${base}${href('/checkout', locale)}?canceled=${number}`,
       webhookUrl: `${base}/api/webhooks/mollie`,
-      locale: payments.locale,
+      locale: LOCALE_META[locale].mollie,
       metadata: { orderId: order.id, orderNumber: number, orderType, subscriptionId: sub?.id ?? null },
       shippingAddress: { givenName: address.name.split(' ')[0], familyName: address.name.split(' ').slice(1).join(' ') || address.name, streetAndNumber: address.street, postalCode: address.postalCode, city: address.city, country: address.country, email },
       lines: [{ type: 'physical', description: product.name, quantity, unitPrice: { currency: q.currency, value: centsToMollie(q.unitPriceCents) }, totalAmount: { currency: q.currency, value: centsToMollie(q.subtotalCents) }, sku: product.sku, vatRate: String(product.vatRatePct.toFixed(2)), vatAmount: { currency: q.currency, value: centsToMollie(Math.round(q.subtotalCents - q.subtotalCents / (1 + product.vatRatePct / 100))) } }],

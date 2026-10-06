@@ -1,13 +1,14 @@
-import { brand, product, copy, subscription, loyalty } from '../../config/commerce.js';
-import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt, picture } from './components.js';
+import { brand, product, loyalty } from '../../config/commerce.js';
+import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, placeholderFlag, priceFmt, picture, split, intervalLabel } from './components.js';
 import { layout, organizationLd, websiteLd, productLd, faqLd } from './layout.js';
 
-export function renderHome({ assets, images }) {
-  const faqs = faqItems().slice(0, 5);
-  const life = [
-    ['Gym', images.life[0]], ['Travel', images.life[1]], ['Festival', images.life[2]],
-    ['Work', images.life[3]], ['Date', images.life[4]], ['Everywhere', images.life[5]],
-  ];
+export function renderHome({ t, assets, images }) {
+  const n = product.wipesPerPack;
+  const faqs = faqItems(t).slice(0, 5);
+  const labels = split(t('life.labels'));
+  const words = split(t('life.words'));
+  const life = labels.map((label, i) => [label, { ...images.life[i], alt: t(`life.alt.${i + 1}`) }]);
+  const heroAlt = t('hero.alt');
   const main = `
 <section class="hero" id="top" data-hero data-frames="${esc(images.heroManifest || '')}">
   <div class="hero-sticky">
@@ -16,7 +17,7 @@ export function renderHome({ assets, images }) {
         ${images.heroPosterMobile.srcsetAvif ? `<source media="(max-width: 899px)" type="image/avif" srcset="${esc(images.heroPosterMobile.srcsetAvif)}" sizes="100vw">` : ''}
         <source media="(max-width: 899px)" type="image/webp" srcset="${esc(images.heroPosterMobile.srcset || images.heroPosterMobile.src)}" sizes="100vw">
         ${images.heroPoster.srcsetAvif ? `<source type="image/avif" srcset="${esc(images.heroPoster.srcsetAvif)}" sizes="100vw">` : ''}
-        <img class="hero-poster" src="${esc(images.heroPoster.src)}" ${images.heroPoster.srcset ? `srcset="${esc(images.heroPoster.srcset)}" sizes="100vw"` : ''} alt="${esc(images.heroPoster.alt)}" fetchpriority="high" decoding="async" width="${images.heroPoster.width}" height="${images.heroPoster.height}">
+        <img class="hero-poster" src="${esc(images.heroPoster.src)}" ${images.heroPoster.srcset ? `srcset="${esc(images.heroPoster.srcset)}" sizes="100vw"` : ''} alt="${esc(heroAlt)}" fetchpriority="high" decoding="async" width="${images.heroPoster.width}" height="${images.heroPoster.height}">
       </picture>
       <canvas data-hero-canvas aria-hidden="true"></canvas>
       <div class="hero-float" data-hero-float aria-hidden="true">
@@ -24,95 +25,94 @@ export function renderHome({ assets, images }) {
       </div>
     </div>
     <div class="wrap hero-content">
-      <p class="eyebrow reveal is-in">${product.wipesPerPack} individually wrapped cleansing wipes</p>
-      <h1 class="display hero-title">Stay fresh.<br><span class="serif">Anywhere.</span></h1>
-      <p class="hero-sub">${esc(copy.heroSub)}</p>
+      <p class="eyebrow reveal is-in">${esc(t('hero.eyebrow', { n }))}</p>
+      <h1 class="display hero-title">${esc(t('hero.titleA'))}<br><span class="serif">${esc(t('hero.titleB'))}</span></h1>
+      <p class="hero-sub">${esc(t('hero.sub', { n }))}</p>
       <div class="hero-cta-row">
-        <a class="btn btn-primary" href="#buy" data-scroll-buy>${esc(copy.ctaPrimary)}</a>
-        <div class="hero-price">${priceFmt(product.priceCents)}<small>incl. VAT</small>${placeholderFlag('RYNSE_PRICE_CENTS')}</div>
+        <a class="btn btn-primary" href="#buy" data-scroll-buy>${esc(t('cta.get'))}</a>
+        <div class="hero-price">${priceFmt(product.priceCents, t)}<small>${esc(t('product.inclVat'))}</small>${placeholderFlag('RYNSE_PRICE_CENTS')}</div>
       </div>
     </div>
-    <div class="hero-scroll-hint">Scroll</div>
+    <div class="hero-scroll-hint">${esc(t('hero.scroll'))}</div>
   </div>
 </section>
 
 <section class="purchase wrap" id="buy" aria-labelledby="buy-title">
-  <h2 id="buy-title" class="sr-only">Buy RYNSE</h2>
-  ${purchasePanel({ id: 'hero' })}
+  <h2 id="buy-title" class="sr-only">${esc(t('buy.title'))}</h2>
+  ${purchasePanel(t, { id: 'hero' })}
 </section>
 
 <section class="section section-tight" id="why" aria-labelledby="why-title">
   <div class="wrap">
     <div class="section-head reveal">
-      <p class="eyebrow">Why RYNSE</p>
-      <h2 id="why-title" class="h2">Freshness that fits <span class="serif gold">in your pocket.</span></h2>
+      <p class="eyebrow">${esc(t('why.eyebrow'))}</p>
+      <h2 id="why-title" class="h2">${esc(t('why.titleA'))} <span class="serif gold">${esc(t('why.titleB'))}</span></h2>
     </div>
     <div class="why-grid">
-      <div class="why-item reveal"><span class="num">01</span><h3>Fresh anywhere</h3><p>A quick, clean, fresh feeling when there's no shower or running water around.</p></div>
-      <div class="why-item reveal"><span class="num">02</span><h3>Individually wrapped</h3><p>Compact, discreet sachets. Pocket, gym bag, hand luggage — RYNSE goes where you go.</p></div>
-      <div class="why-item reveal"><span class="num">03</span><h3>Made for everyday life</h3><p>Water-based, pH-balanced and alcohol-free. Built for every day, not just the big days.</p></div>
+      ${[1, 2, 3].map((i) => `<div class="why-item reveal"><span class="num">0${i}</span><h3>${esc(t(`why.${i}.title`))}</h3><p>${esc(t(`why.${i}.text`))}</p></div>`).join('')}
     </div>
   </div>
 </section>
 
 <section class="section life" aria-labelledby="life-title">
   <div class="wrap section-head reveal">
-    <p class="eyebrow">Wherever life takes you</p>
-    <h2 id="life-title" class="h2">No shower. <span class="serif gold">No problem.</span></h2>
+    <p class="eyebrow">${esc(t('life.eyebrow'))}</p>
+    <h2 id="life-title" class="h2">${esc(t('life.titleA'))} <span class="serif gold">${esc(t('life.titleB'))}</span></h2>
   </div>
   <div class="life-track" data-life>
     ${life.map(([label, img]) => `<figure class="life-card reveal" style="margin:0">${picture(img, { sizes: '(min-width: 1200px) 190px, (min-width: 768px) 30vw, 78vw' })}<figcaption class="label">${esc(label)}</figcaption></figure>`).join('')}
   </div>
-  <p class="life-words" aria-hidden="true"><span>Gym</span><span>Flight</span><span>Festival</span><span>Date</span><span class="serif">RYNSE.</span></p>
+  <p class="life-words" aria-hidden="true">${words.map((w) => `<span>${esc(w)}</span>`).join('')}<span class="serif">RYNSE.</span></p>
 </section>
 
 <section class="section loyalty" id="loyalty" aria-labelledby="loyalty-title">
   <div class="wrap loyalty-grid">
     <div class="reveal">
-      <p class="eyebrow">Subscription &amp; loyalty</p>
-      <h2 id="loyalty-title" class="h2" style="margin:14px 0 18px">Stay fresh.<br><span class="serif gold">Stay rewarded.</span></h2>
-      <p class="lead">Subscribe and RYNSE arrives every ${esc(subscription.interval)}, automatically. Every full year your subscription runs, your loyalty benefit grows.</p>
+      <p class="eyebrow">${esc(t('loyalty.eyebrow'))}</p>
+      <h2 id="loyalty-title" class="h2" style="margin:14px 0 18px">${esc(t('loyalty.titleA'))}<br><span class="serif gold">${esc(t('loyalty.titleB'))}</span></h2>
+      <p class="lead">${esc(t('loyalty.lead', { interval: intervalLabel(t) }))}</p>
       <ul class="loyalty-rules">
-        <li>Benefits grow with every uninterrupted year as a subscriber.</li>
-        <li>They exist only while your subscription is active — cancel, and the status resets.</li>
-        <li>Come back later? A new subscription starts again at year 1. Cancel anytime, no questions asked.</li>
+        <li>${esc(t('loyalty.rule1'))}</li>
+        <li>${esc(t('loyalty.rule2'))}</li>
+        <li>${esc(t('loyalty.rule3'))}</li>
       </ul>
-      <div style="margin-top:28px"><a class="btn btn-ghost" href="/subscription">How it works</a></div>
+      <div style="margin-top:28px"><a class="btn btn-ghost" href="${t.href('/subscription')}">${esc(t('cta.howItWorks'))}</a></div>
     </div>
-    <div class="reveal">${loyaltyLadder()}${loyalty.levels.every((l) => l.discountPct == null) ? '<p class="small muted" style="margin-top:12px">Exact loyalty percentages are announced at launch.</p>' : ''}</div>
+    <div class="reveal">${loyaltyLadder(t)}${loyalty.levels.every((l) => l.discountPct == null) ? `<p class="small muted" style="margin-top:12px">${esc(t('loyalty.pctNote'))}</p>` : ''}</div>
   </div>
 </section>
 
 <section class="section final" id="get" aria-labelledby="final-title">
   <div class="wrap final-grid">
     <div class="final-visual reveal">
-      ${picture(images.packshot, { sizes: '(min-width: 900px) 45vw, 100vw' })}
+      ${picture({ ...images.packshot, alt: t('packshot.alt') }, { sizes: '(min-width: 900px) 45vw, 100vw' })}
     </div>
     <div class="reveal">
-      <p class="eyebrow">Get RYNSE</p>
-      <h2 id="final-title" class="h2" style="margin:14px 0 18px">Wherever you go, <span class="serif gold">RYNSE goes.</span></h2>
-      <p class="lead" style="margin-bottom:26px">${product.wipesPerPack} wipes. One pack. Yours in a few taps.</p>
-      ${purchasePanel({ id: 'final', compact: true })}
+      <p class="eyebrow">${esc(t('final.eyebrow'))}</p>
+      <h2 id="final-title" class="h2" style="margin:14px 0 18px">${esc(t('final.titleA'))} <span class="serif gold">${esc(t('final.titleB'))}</span></h2>
+      <p class="lead" style="margin-bottom:26px">${esc(t('final.lead', { n }))}</p>
+      ${purchasePanel(t, { id: 'final', compact: true })}
     </div>
   </div>
 </section>
 
 <section class="section section-tight" aria-labelledby="faq-title">
   <div class="wrap">
-    <div class="section-head reveal"><p class="eyebrow">Good to know</p><h2 id="faq-title" class="h2">Questions, <span class="serif gold">answered.</span></h2></div>
+    <div class="section-head reveal"><p class="eyebrow">${esc(t('faq.eyebrow'))}</p><h2 id="faq-title" class="h2">${esc(t('faq.titleA'))} <span class="serif gold">${esc(t('faq.titleB'))}</span></h2></div>
     ${faqHtml(faqs, { open: -1 })}
-    <p style="margin-top:22px"><a class="link" href="/faq">All questions →</a></p>
+    <p style="margin-top:22px"><a class="link" href="${t.href('/faq')}">${esc(t('faq.all'))}</a></p>
   </div>
 </section>`;
 
   return layout({
+    t,
     path: '/',
-    title: 'Stay fresh. Anywhere.',
-    description: `${brand.description} Order a single pack or subscribe and save — pay with iDEAL, Apple Pay or card.`,
+    title: t('brand.tagline'),
+    description: t('meta.home.description', { n }),
     bodyClass: 'page-home',
     main,
     assets,
     scripts: [assets.heroJs],
-    jsonLd: [organizationLd(), websiteLd(), productLd(), faqLd(faqs)],
+    jsonLd: [organizationLd(t), websiteLd(t), productLd(t), faqLd(faqs)],
   });
 }

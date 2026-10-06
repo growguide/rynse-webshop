@@ -1,29 +1,28 @@
-// Shared HTML components (string templates, zero dependencies).
+// Shared HTML components (string templates, zero dependencies). Every component takes
+// a translator `t` (src/web/i18n) so each locale builds its own pages.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { product, shipping, subscription, loyalty, copy, payments, formatMoney, placeholders } from '../../config/commerce.js';
+import { product, shipping, subscription, loyalty, payments, formatMoney, placeholders } from '../../config/commerce.js';
+import { intervalLabel as i18nInterval } from '../i18n/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const assetsDir = path.resolve(here, '..', 'assets');
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isDev = process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production';
+export const split = (s) => String(s).split('|');
 
 const wordmarkSvg = readFileSync(path.join(assetsDir, 'brand', 'rynse-wordmark.svg'), 'utf8');
 const wordmarkPath = /d="([^"]+)"/.exec(wordmarkSvg)[1];
 const wordmarkViewBox = /viewBox="([^"]+)"/.exec(wordmarkSvg)[1];
-const taglineSvg = readFileSync(path.join(assetsDir, 'brand', 'rynse-tagline.svg'), 'utf8');
 
 /** Inline logo (real vector wordmark). Colour via currentColor. */
 export function logo({ className = '', label = 'RYNSE' } = {}) {
   return `<svg class="${className}" viewBox="${wordmarkViewBox}" role="img" aria-label="${esc(label)}" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="${wordmarkPath}"/></svg>`;
 }
-export function tagline({ className = '' } = {}) {
-  return taglineSvg.replace('<svg ', `<svg class="${className}" `);
-}
 
-/** Symbol definitions used by <use> (wordmark + sachet). Include once per page. */
+/** Symbol definitions used by <use> (wordmark + sachet gradients). Include once per page. */
 export function svgDefs() {
   return `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -35,20 +34,15 @@ export function svgDefs() {
   </defs></svg>`;
 }
 
-/**
- * Procedural sachet (vector): navy foil packet with crimped edges and the real
- * gold wordmark. Used for floating hero layers, cart thumbnail, placeholders.
- * Aspect ~ 7:6.
- */
+/** Procedural vector sachet with the real gold wordmark (hero depth layer, cart thumbnail, placeholders). */
 export function sachetSvg({ className = '', title = 'RYNSE cleansing wipe sachet' } = {}) {
   const W = 700, H = 600, edge = 26, tooth = 14;
-  // zig-zag crimp along top and bottom edges
   let top = `M0 ${edge}`;
   for (let x = 0; x <= W; x += tooth) top += ` L${x + tooth / 2} ${edge - 9} L${x + tooth} ${edge}`;
   let bottom = ``;
   for (let x = W; x >= 0; x -= tooth) bottom += ` L${x - tooth / 2} ${H - edge + 9} L${x - tooth} ${H - edge}`;
   const outline = `${top} L${W} ${H - edge}${bottom} Z`;
-  return `<svg class="${className}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}" focusable="false">
+  return `<svg class="${className}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}" focusable="false"${title ? '' : ' aria-hidden="true"'}>
   <path d="${outline}" fill="url(#sachet-body)"/>
   <rect x="0" y="${edge}" width="${W}" height="${edge * 2.2}" fill="url(#sachet-edge)" opacity="0.9"/>
   <rect x="0" y="${H - edge * 3.2}" width="${W}" height="${edge * 2.2}" fill="url(#sachet-edge)" opacity="0.9"/>
@@ -61,74 +55,71 @@ export function sachetSvg({ className = '', title = 'RYNSE cleansing wipe sachet
 }
 
 /** Responsive <picture> with AVIF + WebP sources from the images manifest. */
-export function picture(img, { sizes = '100vw', className = '', loading = 'lazy', fetchpriority } = {}) {
-  const attrs = `alt="${esc(img.alt || '')}" width="${img.width || ''}" height="${img.height || ''}" loading="${loading}" decoding="async"${fetchpriority ? ` fetchpriority="${fetchpriority}"` : ''}${className ? ` class="${className}"` : ''}`;
+export function picture(img, { sizes = '100vw', className = '', loading = 'lazy', fetchpriority, alt } = {}) {
+  const a = alt ?? img.alt ?? '';
+  const attrs = `alt="${esc(a)}" width="${img.width || ''}" height="${img.height || ''}" loading="${loading}" decoding="async"${fetchpriority ? ` fetchpriority="${fetchpriority}"` : ''}${className ? ` class="${className}"` : ''}`;
   if (!img.srcset) return `<img src="${esc(img.src)}" ${attrs}>`;
   return `<picture>${img.srcsetAvif ? `<source type="image/avif" srcset="${esc(img.srcsetAvif)}" sizes="${sizes}">` : ''}<source type="image/webp" srcset="${esc(img.srcset)}" sizes="${sizes}"><img src="${esc(img.src)}" srcset="${esc(img.srcset)}" sizes="${sizes}" ${attrs}></picture>`;
 }
 
-export function payBadges({ label = true, className = '' } = {}) {
+export function payBadges(t, { label = true, className = '' } = {}) {
   const items = [
     { src: '/assets/payment/ideal.svg', alt: 'iDEAL' },
     { src: '/assets/payment/applepay.svg', alt: 'Apple Pay' },
     { src: '/assets/payment/visa.svg', alt: 'Visa' },
     { src: '/assets/payment/mastercard.svg', alt: 'Mastercard' },
   ];
-  return `<div class="pay-badges ${className}" aria-label="Accepted payment methods">${label ? '<span class="pay-label">Pay with</span>' : ''}${items.map((i) => `<img src="${i.src}" alt="${i.alt}" width="32" height="24" loading="lazy" decoding="async">`).join('')}</div>`;
+  return `<div class="pay-badges ${className}" aria-label="${esc(t('payBadges.aria'))}">${label ? `<span class="pay-label">${esc(t('payBadges.label'))}</span>` : ''}${items.map((i) => `<img src="${i.src}" alt="${i.alt}" width="32" height="24" loading="lazy" decoding="async">`).join('')}</div>`;
 }
 
-export const priceFmt = (cents) => formatMoney(cents, product.currency, 'nl-NL').replace(/ /g, ' ');
+export const priceFmt = (cents, t) => formatMoney(cents, product.currency, t ? t.meta.numberLocale : 'nl-NL').replace(/ /g, ' ');
 
 export function placeholderFlag(key) {
   if (!isDev) return '';
   return placeholders.some((p) => p.key === key) ? `<span class="placeholder-flag" title="Placeholder value — set ${esc(key)}">placeholder</span>` : '';
 }
 
-/** Purchase panel: selector + CTA + facts + badges. `id` suffix allows two instances (hero + final). */
-export function purchasePanel({ id = 'hero', compact = false } = {}) {
+/** Purchase panel: selector + CTA + facts + badges. */
+export function purchasePanel(t, { id = 'hero', compact = false } = {}) {
   const subPct = subscription.discountPct;
-  const subPrice = subPct ? priceFmt(Math.round(product.priceCents * (1 - subPct / 100))) : null;
+  const subPrice = subPct ? priceFmt(Math.round(product.priceCents * (1 - subPct / 100)), t) : null;
+  const facts = ['facts.1', 'facts.2', 'facts.3', 'facts.4'].map((k) => t(k));
   return `<div class="panel" data-purchase="${id}">
   <div class="panel-head">
-    <div><div class="panel-title">${esc(product.shortName)}</div><div class="small muted">${product.wipesPerPack} individually wrapped wipes</div></div>
-    <div class="panel-price"><span data-price>${priceFmt(product.priceCents)}</span>${placeholderFlag('RYNSE_PRICE_CENTS')}<div class="small muted" style="text-align:right">incl. VAT</div></div>
+    <div><div class="panel-title">${esc(t('product.shortName'))}</div><div class="small muted">${esc(t('product.wipes', { n: product.wipesPerPack }))}</div></div>
+    <div class="panel-price"><span data-price>${priceFmt(product.priceCents, t)}</span>${placeholderFlag('RYNSE_PRICE_CENTS')}<div class="small muted" style="text-align:right">${esc(t('product.inclVat'))}</div></div>
   </div>
   <fieldset class="options" style="border:0;padding:0;margin:0">
-    <legend class="sr-only">Choose how you want to buy</legend>
-    <label class="option"><input type="radio" name="mode-${id}" value="one_time" checked><div class="option-title">${esc(copy.oneTime.title)}</div><div class="option-sub">${esc(copy.oneTime.sub)}</div></label>
-    <label class="option"><input type="radio" name="mode-${id}" value="subscription"><div class="option-title">${esc(copy.subscribe.title)}<span class="tag">${subPct ? `−${subPct}%` : 'Loyalty'}</span></div><div class="option-sub">Every ${esc(subscription.interval)}${subPrice ? ` · ${subPrice}` : ''}. ${esc(copy.subscribe.sub)}</div></label>
+    <legend class="sr-only">${esc(t('panel.choose'))}</legend>
+    <label class="option"><input type="radio" name="mode-${id}" value="one_time" checked><div class="option-title">${esc(t('panel.oneTime'))}</div><div class="option-sub">${esc(t('panel.oneTimeSub'))}</div></label>
+    <label class="option"><input type="radio" name="mode-${id}" value="subscription"><div class="option-title">${esc(t('panel.subscribe'))}<span class="tag">${subPct ? `−${subPct}%` : esc(t('panel.loyaltyTag'))}</span></div><div class="option-sub">${esc(t('panel.every', { interval: intervalLabel(t) }))}${subPrice ? ` · ${subPrice}` : ''}. ${esc(t('panel.subscribeSub'))}</div></label>
   </fieldset>
   <div class="panel-row">
-    <div class="qty" role="group" aria-label="Quantity"><button type="button" data-qty="-1" aria-label="Decrease quantity">−</button><output data-qty-out aria-live="polite">1</output><button type="button" data-qty="1" aria-label="Increase quantity">+</button></div>
-    <button class="btn btn-primary" type="button" data-add><span class="spinner" aria-hidden="true"></span><span>${esc(copy.ctaPrimary)}</span></button>
+    <div class="qty" role="group" aria-label="${esc(t('panel.qty'))}"><button type="button" data-qty="-1" aria-label="${esc(t('panel.decrease'))}">−</button><output data-qty-out aria-live="polite">1</output><button type="button" data-qty="1" aria-label="${esc(t('panel.increase'))}">+</button></div>
+    <button class="btn btn-primary" type="button" data-add><span class="spinner" aria-hidden="true"></span><span>${esc(t('cta.get'))}</span></button>
   </div>
-  ${compact ? '' : `<ul class="facts">${product.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`}
-  <p class="sub-note" data-sub-note hidden>Subscription: delivered and billed every ${esc(subscription.interval)}${subscription.cancelAnytime ? ', cancel anytime from your account' : ''}. Loyalty benefits apply only while your subscription runs; cancelling resets them.</p>
-  ${payBadges()}
+  ${compact ? '' : `<ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`}
+  <p class="sub-note" data-sub-note hidden>${esc(t('panel.subNote', { interval: intervalLabel(t) }))}</p>
+  ${payBadges(t)}
 </div>`;
 }
 
-export function faqItems() {
-  return [
-    ['What is RYNSE?', `RYNSE is a pack of ${product.wipesPerPack} individually wrapped, water-based cleansing wipes. They give you a fresh, clean feeling when water isn't available — after the gym, on the road, at a festival, after a flight or on a long working day.`],
-    ['What are the wipes made of?', 'RYNSE wipes are water-based, pH-balanced and alcohol-free. Each wipe is individually wrapped, so it stays fresh until you open it.'],
-    ['How many wipes are in a pack?', `${product.wipesPerPack}. Every wipe is individually wrapped in a compact, discreet sachet you can carry anywhere — pocket, gym bag or hand luggage.`],
-    ['Is RYNSE for men or women?', 'RYNSE is unisex. The product and the sachet are designed for anyone who wants to stay fresh anywhere.'],
-    ['Can I buy once, or do I need a subscription?', `Both. Choose a one-time purchase for a single pack, or Subscribe & Save for automatic deliveries every ${subscription.interval}. You can cancel a subscription at any time from your account.`],
-    ['How do loyalty benefits work?', 'Subscribers build up a loyalty benefit for every full year their subscription runs without interruption. The benefit only exists while the subscription is active: if you cancel, it resets. A new subscription later starts again at year 1.'],
-    ['How can I pay?', 'With iDEAL, Apple Pay and credit card (Visa, Mastercard). Payments are processed securely by Mollie.'],
-    ['How fast do you deliver and what does shipping cost?', `Delivery: ${shipping.deliveryEstimate}. Shipping costs ${priceFmt(shipping.costCents)} and is free from ${priceFmt(shipping.freeShippingThresholdCents)}${shipping.subscriptionShipsFree ? ' — subscriptions always ship free' : ''}. We currently ship to ${shipping.countries.join(', ')}.`],
-    ['Can I return my order?', `You can return an unopened pack within ${shipping.returnWindowDays} days of delivery. See Shipping & Returns for the details.`],
-  ];
+export const intervalLabel = (t) => i18nInterval(t.locale, subscription.interval);
+
+export function faqItems(t) {
+  const n = product.wipesPerPack;
+  const interval = intervalLabel(t);
+  const vars = { n, interval, estimate: shipping.deliveryEstimate, cost: priceFmt(shipping.costCents, t), threshold: priceFmt(shipping.freeShippingThresholdCents, t), subFree: shipping.subscriptionShipsFree ? t('faq.a8.subFree') : '', countries: shipping.countries.join(', '), days: shipping.returnWindowDays };
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [t(`faq.q${i}`, vars), t(`faq.a${i}`, vars)]);
 }
 
-export function faqHtml(items = faqItems(), { open = 0 } = {}) {
+export function faqHtml(items, { open = 0 } = {}) {
   return `<div class="faq">${items.map(([q, a], i) => `<details${i === open ? ' open' : ''}><summary>${esc(q)}</summary><div class="answer">${esc(a)}</div></details>`).join('')}</div>`;
 }
 
-export function loyaltyLadder() {
-  const names = ['Welcome tier', 'Second year', 'Third year', 'Fourth year and beyond'];
-  return `<ol class="ladder">${loyalty.levels.map((l, i) => `<li><span class="lvl">${l.year}</span><div><div class="lvl-name">${esc(l.label)}</div><div class="lvl-sub">${esc(names[i] || '')}</div></div><span class="lvl-pct ${l.discountPct == null ? 'tbd' : ''}">${l.discountPct == null ? 'Benefit announced at launch' : `−${l.discountPct}%`}</span></li>`).join('')}</ol>`;
+export function loyaltyLadder(t) {
+  const tiers = split(t('loyalty.tiers'));
+  return `<ol class="ladder">${loyalty.levels.map((l, i) => `<li><span class="lvl">${l.year}</span><div><div class="lvl-name">${esc(i === loyalty.levels.length - 1 ? t('loyalty.year4') : t('loyalty.year', { n: l.year }))}</div><div class="lvl-sub">${esc(tiers[i] || '')}</div></div><span class="lvl-pct ${l.discountPct == null ? 'tbd' : ''}">${l.discountPct == null ? esc(t('loyalty.tbd')) : `−${l.discountPct}%`}</span></li>`).join('')}</ol>`;
 }
 
 export const paymentMethodsConfig = payments.methods;

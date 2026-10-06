@@ -1,27 +1,31 @@
-// Plain, premium e-mail templates (HTML + text). Kept simple and bulletproof for
-// mail clients: table-free, inline styles, navy + gold.
+// Transactional e-mail templates (HTML + text), localized (en/nl/es) via src/web/i18n.
+// Simple, bulletproof markup: inline styles, navy + gold.
 import { formatMoney } from '../../config/commerce.js';
+import { translator, href, LOCALE_META } from '../../web/i18n/index.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const tr = (d) => translator(d.locale || 'en');
+const money = (cents, t) => formatMoney(cents, 'EUR', t.meta.numberLocale).replace(/ /g, ' ');
 
-function layout({ brand, siteUrl }, title, bodyHtml, bodyText) {
-  const html = `<!doctype html><html><body style="margin:0;background:#0A1428;font-family:Helvetica,Arial,sans-serif;color:#F3EEE2">
+function layout(d, t, title, bodyHtml, bodyText) {
+  const { brand, siteUrl } = d;
+  const html = `<!doctype html><html lang="${t.meta.lang}"><body style="margin:0;background:#0A1428;font-family:Helvetica,Arial,sans-serif;color:#F3EEE2">
 <div style="max-width:560px;margin:0 auto;padding:40px 24px">
   <div style="font-weight:900;letter-spacing:.08em;color:#E2C272;font-size:22px;margin-bottom:28px">${esc(brand.name)}</div>
   <h1 style="font-size:24px;line-height:1.25;margin:0 0 16px;color:#FFFFFF">${esc(title)}</h1>
   <div style="font-size:16px;line-height:1.6;color:#D9D2C2">${bodyHtml}</div>
-  <p style="margin-top:36px;font-size:13px;color:#8A8FA3">${esc(brand.tagline)} · <a href="${esc(siteUrl)}" style="color:#E2C272">${esc(siteUrl.replace(/^https?:\/\//, ''))}</a> · Questions? <a href="mailto:${esc(brand.supportEmail)}" style="color:#E2C272">${esc(brand.supportEmail)}</a></p>
+  <p style="margin-top:36px;font-size:13px;color:#8A8FA3">${esc(t('brand.tagline'))} · <a href="${esc(siteUrl + href('/', t.locale))}" style="color:#E2C272">${esc(siteUrl.replace(/^https?:\/\//, ''))}</a> · ${esc(t('email.questions'))} <a href="mailto:${esc(brand.supportEmail)}" style="color:#E2C272">${esc(brand.supportEmail)}</a></p>
 </div></body></html>`;
-  const text = `${brand.name}\n\n${title}\n\n${bodyText}\n\n${brand.tagline} · ${siteUrl} · ${brand.supportEmail}`;
+  const text = `${brand.name}\n\n${title}\n\n${bodyText}\n\n${t('brand.tagline')} · ${siteUrl}${href('/', t.locale)} · ${brand.supportEmail}`;
   return { subject: title, html, text };
 }
 
-const lines = (order) => {
+const lines = (order, t) => {
   const rows = [
-    [`${order.quantity} × ${order.productName || 'RYNSE — 40 Wipes'}`, formatMoney(order.subtotal_cents)],
-    ...(order.discount_cents ? [[order.discount_label || 'Discount', `− ${formatMoney(order.discount_cents)}`]] : []),
-    ['Shipping', order.shipping_cents ? formatMoney(order.shipping_cents) : 'Free'],
-    ['Total (incl. VAT)', formatMoney(order.total_cents)],
+    [t('js.cart.line', { n: order.quantity }), money(order.subtotal_cents, t)],
+    ...(order.discount_cents ? [[order.discount_label || t('email.line.discount'), `− ${money(order.discount_cents, t)}`]] : []),
+    [t('email.line.shipping'), order.shipping_cents ? money(order.shipping_cents, t) : t('email.line.free')],
+    [t('email.line.total'), money(order.total_cents, t)],
   ];
   const html = rows.map(([k, val]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E2A47"><span>${esc(k)}</span><span style="color:#fff">${esc(val)}</span></div>`).join('');
   const text = rows.map(([k, val]) => `${k}: ${val}`).join('\n');
@@ -31,52 +35,64 @@ const lines = (order) => {
 const address = (a) => [a.name, a.street, `${a.postalCode} ${a.city}`, a.country].filter(Boolean);
 
 export function orderConfirmation(d) {
+  const t = tr(d);
   const { order } = d;
-  const l = lines(order);
+  const l = lines(order, t);
   const addr = address(order.shipping_address);
-  const sub = order.order_type === 'subscription_first'
-    ? `<p>This is the first delivery of your subscription (every ${esc(d.interval)}). You can pause or cancel any time from <a href="${esc(d.siteUrl)}/account" style="color:#E2C272">your account</a> — no questions asked.</p>`
-    : '';
-  const subText = order.order_type === 'subscription_first' ? `\nThis is the first delivery of your subscription (every ${d.interval}). Cancel any time at ${d.siteUrl}/account.` : '';
-  return layout(d, `Order ${order.number} confirmed`,
-    `<p>Thanks — your payment went through and we're getting your pack ready.</p>${l.html}<p style="margin-top:20px">Shipping to:<br>${addr.map(esc).join('<br>')}</p>${sub}<p>Track your order: <a href="${esc(d.siteUrl)}/order/${esc(order.number)}?e=${encodeURIComponent(order.email)}" style="color:#E2C272">${esc(d.siteUrl)}/order/${esc(order.number)}</a></p>`,
-    `Thanks — your payment went through and we're getting your pack ready.\n\n${l.text}\n\nShipping to:\n${addr.join('\n')}${subText}\n\nTrack your order: ${d.siteUrl}/order/${order.number}?e=${encodeURIComponent(order.email)}`);
+  const track = `${d.siteUrl}${href(`/order/${order.number}`, t.locale)}?e=${encodeURIComponent(order.email)}`;
+  const account = `${d.siteUrl}${href('/account', t.locale)}`;
+  const isSub = order.order_type === 'subscription_first';
+  const subHtml = isSub ? `<p>${esc(t('email.confirm.sub', { interval: d.interval }))} <a href="${esc(account)}" style="color:#E2C272">${esc(account.replace(/^https?:\/\//, ''))}</a></p>` : '';
+  const subText = isSub ? `\n${t('email.confirm.sub', { interval: d.interval })} ${account}` : '';
+  return layout(d, t, t('email.confirm.subject', { number: order.number }),
+    `<p>${esc(t('email.confirm.body'))}</p>${l.html}<p style="margin-top:20px">${esc(t('email.confirm.shipTo'))}<br>${addr.map(esc).join('<br>')}</p>${subHtml}<p>${esc(t('email.confirm.track'))} <a href="${esc(track)}" style="color:#E2C272">${esc(track)}</a></p>`,
+    `${t('email.confirm.body')}\n\n${l.text}\n\n${t('email.confirm.shipTo')}\n${addr.join('\n')}${subText}\n\n${t('email.confirm.track')} ${track}`);
 }
 
 export function orderShipped(d) {
+  const t = tr(d);
   const { order } = d;
-  const track = order.tracking_code ? `<p>Tracking code: <strong style="color:#fff">${esc(order.tracking_code)}</strong></p>` : '';
-  return layout(d, `Order ${order.number} is on its way`,
-    `<p>Your RYNSE pack has shipped.</p>${track}<p>Stay fresh. Anywhere.</p>`,
-    `Your RYNSE pack has shipped.${order.tracking_code ? `\nTracking code: ${order.tracking_code}` : ''}\n\nStay fresh. Anywhere.`);
+  const track = order.tracking_code ? `<p>${esc(t('email.shipped.tracking'))} <strong style="color:#fff">${esc(order.tracking_code)}</strong></p>` : '';
+  return layout(d, t, t('email.shipped.subject', { number: order.number }),
+    `<p>${esc(t('email.shipped.body'))}</p>${track}<p>${esc(t('brand.tagline'))}</p>`,
+    `${t('email.shipped.body')}${order.tracking_code ? `\n${t('email.shipped.tracking')} ${order.tracking_code}` : ''}\n\n${t('brand.tagline')}`);
 }
 
 export function paymentFailed(d) {
-  return layout(d, 'We could not process your renewal',
-    `<p>The payment for your RYNSE subscription did not go through. Mollie will retry automatically over the next few days. If it keeps failing, your subscription will be cancelled and your loyalty status will reset — you can always start a new one.</p><p><a href="${esc(d.siteUrl)}/account" style="color:#E2C272">Manage your subscription</a></p>`,
-    `The payment for your RYNSE subscription did not go through. Mollie will retry automatically over the next few days. If it keeps failing, your subscription will be cancelled and your loyalty status will reset.\n\nManage your subscription: ${d.siteUrl}/account`);
+  const t = tr(d);
+  const account = `${d.siteUrl}${href('/account', t.locale)}`;
+  return layout(d, t, t('email.failed.subject'),
+    `<p>${esc(t('email.failed.body'))}</p><p><a href="${esc(account)}" style="color:#E2C272">${esc(t('email.failed.manage'))}</a></p>`,
+    `${t('email.failed.body')}\n\n${t('email.failed.manage')}: ${account}`);
 }
 
 export function subscriptionCanceled(d) {
-  return layout(d, 'Your subscription has been cancelled',
-    `<p>Your RYNSE subscription is now cancelled and no further payments will be taken. Your loyalty status has been reset; a new subscription starts again at year 1.</p><p>Whenever you want back in: <a href="${esc(d.siteUrl)}" style="color:#E2C272">${esc(d.siteUrl.replace(/^https?:\/\//, ''))}</a></p>`,
-    `Your RYNSE subscription is now cancelled and no further payments will be taken. Your loyalty status has been reset; a new subscription starts again at year 1.\n\n${d.siteUrl}`);
+  const t = tr(d);
+  const home = `${d.siteUrl}${href('/', t.locale)}`;
+  return layout(d, t, t('email.canceled.subject'),
+    `<p>${esc(t('email.canceled.body'))}</p><p>${esc(t('email.canceled.back'))} <a href="${esc(home)}" style="color:#E2C272">${esc(home.replace(/^https?:\/\//, ''))}</a></p>`,
+    `${t('email.canceled.body')}\n\n${t('email.canceled.back')} ${home}`);
 }
 
 export function refundIssued(d) {
-  return layout(d, `Refund for order ${d.order.number}`,
-    `<p>We've refunded <strong style="color:#fff">${esc(formatMoney(d.amountCents))}</strong> to your original payment method. Depending on your bank it can take a few days to show up.</p>`,
-    `We've refunded ${formatMoney(d.amountCents)} to your original payment method. Depending on your bank it can take a few days to show up.`);
+  const t = tr(d);
+  return layout(d, t, t('email.refund.subject', { number: d.order.number }),
+    `<p>${esc(t('email.refund.body', { amount: money(d.amountCents, t) }))}</p>`,
+    t('email.refund.body', { amount: money(d.amountCents, t) }));
 }
 
 export function magicLink(d) {
-  return layout(d, 'Your RYNSE sign-in link',
-    `<p>Tap the button to sign in. The link works once and expires in 15 minutes.</p><p><a href="${esc(d.link)}" style="display:inline-block;background:#E2C272;color:#0A1428;font-weight:700;padding:14px 22px;border-radius:4px;text-decoration:none">Sign in</a></p><p style="font-size:13px;color:#8A8FA3">If you didn't request this, you can ignore this e-mail.</p>`,
-    `Sign in with this link (valid 15 minutes, works once):\n${d.link}\n\nIf you didn't request this, ignore this e-mail.`);
+  const t = tr(d);
+  return layout(d, t, t('email.magic.subject'),
+    `<p>${esc(t('email.magic.body'))}</p><p><a href="${esc(d.link)}" style="display:inline-block;background:#E2C272;color:#0A1428;font-weight:700;padding:14px 22px;border-radius:4px;text-decoration:none">${esc(t('email.magic.button'))}</a></p><p style="font-size:13px;color:#8A8FA3">${esc(t('email.magic.ignore'))}</p>`,
+    `${t('email.magic.body')}\n${d.link}\n\n${t('email.magic.ignore')}`);
 }
 
 export function contactMessage(d) {
-  return layout(d, `Contact form: ${d.name || d.fromEmail}`,
+  const t = translator('en');
+  return layout(d, t, `Contact form: ${d.name || d.fromEmail}`,
     `<p>From: ${esc(d.name)} &lt;${esc(d.fromEmail)}&gt;</p><p style="white-space:pre-wrap">${esc(d.message)}</p>`,
     `From: ${d.name} <${d.fromEmail}>\n\n${d.message}`);
 }
+
+export const emailLocales = LOCALE_META;

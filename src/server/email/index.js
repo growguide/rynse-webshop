@@ -3,6 +3,8 @@
 import { getSql } from '../db.js';
 import { brand, site } from '../../config/commerce.js';
 import * as templates from './templates.js';
+import { intervalLabel, pickLocale } from '../../web/i18n/index.js';
+import { subscription } from '../../config/commerce.js';
 
 async function sendViaResend({ to, subject, html, text }) {
   const key = process.env.RESEND_API_KEY;
@@ -33,7 +35,14 @@ export async function sendOnce(dedupeKey, templateName, data) {
   const sql = getSql();
   const tpl = templates[templateName];
   if (!tpl) throw new Error(`Unknown e-mail template ${templateName}`);
-  const msg = tpl({ ...data, brand, siteUrl: site.baseUrl });
+  // Language: explicit, else the customer's stored preference, else English.
+  let locale = pickLocale(data.locale);
+  if (!locale && data.to) {
+    const [c] = await sql`SELECT locale FROM customers WHERE email = ${data.to}`;
+    locale = pickLocale(c?.locale) || 'en';
+  }
+  locale = locale || 'en';
+  const msg = tpl({ ...data, locale, interval: intervalLabel(locale, data.interval || subscription.interval), brand, siteUrl: site.baseUrl });
   const provider = process.env.EMAIL_PROVIDER || 'log';
   const transport = transports[provider];
   if (!transport) throw new Error(`Unknown EMAIL_PROVIDER ${provider}`);

@@ -17,21 +17,21 @@
   const canApplePay = !!(window.ApplePaySession && window.ApplePaySession.canMakePayments && window.ApplePaySession.canMakePayments());
   if (!canApplePay && applePayRow) applePayRow.remove();
 
-  const fmt = R.fmt;
+  const fmt = R.fmt, T = R.T;
   const summary = async () => {
-    $('[data-sum-mode]').textContent = cart.mode === 'subscription' ? `Subscription · every ${window.__RYNSE__.interval}` : 'One-time purchase';
-    $('[data-sum-qty]').textContent = `${cart.quantity} × 40 individually wrapped wipes`;
+    $('[data-sum-mode]').textContent = cart.mode === 'subscription' ? T('checkout.subscription', { interval: window.__RYNSE__.interval }) : T('checkout.oneTime');
+    $('[data-sum-qty]').textContent = T('checkout.wipes', { n: cart.quantity });
     $$('[data-mode-btn]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modeBtn === cart.mode)));
     const terms = $('[data-sub-terms]'); terms.hidden = cart.mode !== 'subscription';
-    $('[data-pay-label]').textContent = cart.mode === 'subscription' ? 'Pay & start subscription' : 'Pay now';
+    $('[data-pay-label]').textContent = cart.mode === 'subscription' ? T('checkout.paySubscribe') : T('checkout.payNow');
     try {
       const r = await fetch('/api/quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: cart.mode, quantity: cart.quantity, country: $('#f-country').value }) });
       const q = await r.json();
       if (!r.ok) throw new Error(q.error);
-      $('[data-sum-totals]').innerHTML = `<div><span>${cart.quantity} × RYNSE — 40 Wipes</span><span>${fmt(q.subtotalCents)}</span></div>${q.discountCents ? `<div><span>${q.discountLabel}</span><span>− ${fmt(q.discountCents)}</span></div>` : ''}<div><span>Shipping</span><span>${q.shippingCents ? fmt(q.shippingCents) : 'Free'}</span></div><div class="grand"><span>Total to pay now</span><span>${fmt(q.totalCents)}</span></div>`;
+      $('[data-sum-totals]').innerHTML = `<div><span>${T('cart.line', { n: cart.quantity })}</span><span>${fmt(q.subtotalCents)}</span></div>${q.discountCents ? `<div><span>${q.discountLabel}</span><span>− ${fmt(q.discountCents)}</span></div>` : ''}<div><span>${T('cart.shipping')}</span><span>${q.shippingCents ? fmt(q.shippingCents) : T('cart.free')}</span></div><div class="grand"><span>${T('cart.totalNow')}</span><span>${fmt(q.totalCents)}</span></div>`;
       $('[data-sub-amount]').textContent = fmt(q.totalCents);
-      $('[data-pay-label]').textContent = `${cart.mode === 'subscription' ? 'Pay & subscribe' : 'Pay'} ${fmt(q.totalCents)}`;
-    } catch (e) { $('[data-sum-totals]').innerHTML = `<div class="alert alert-error">${e.message || 'Could not load prices'}</div>`; }
+      $('[data-pay-label]').textContent = `${cart.mode === 'subscription' ? T('checkout.paySubscribe') : T('checkout.pay')} ${fmt(q.totalCents)}`;
+    } catch (e) { $('[data-sum-totals]').innerHTML = `<div class="alert alert-error">${e.message || T('checkout.priceError')}</div>`; }
   };
   $$('[data-mode-btn]').forEach((b) => b.addEventListener('click', () => { cart = { ...cart, mode: b.dataset.modeBtn }; R.writeCart(cart); summary(); }));
   $('#f-country').addEventListener('change', summary);
@@ -68,7 +68,7 @@
       const data = await R.api('/api/checkout', {
         mode: cart.mode, quantity: cart.quantity, email: f.email.value, name: f.name.value,
         address: { name: f.name.value, street: f.street.value, postalCode: f.postalCode.value, city: f.city.value, country: f.country.value },
-        method: f.method.value, marketingConsent: f.marketingConsent.checked,
+        method: f.method.value, marketingConsent: f.marketingConsent.checked, locale: R.locale,
       });
       R.track('add_payment_info', { payment_type: f.method.value });
       if (cart.mode === 'subscription') R.track('subscription_purchase_started', { quantity: cart.quantity });
@@ -76,7 +76,7 @@
       sessionStorage.setItem('rynse:pending-order', data.orderNumber);
       location.assign(data.checkoutUrl);
     } catch (ex) {
-      err.textContent = ex.message || 'Something went wrong. Please try again.'; err.hidden = false;
+      err.textContent = ex.message || T('checkout.error'); err.hidden = false;
       btn.removeAttribute('aria-busy'); btn.disabled = false;
       err.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }

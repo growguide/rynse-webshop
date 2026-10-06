@@ -10,6 +10,7 @@ import { brand, product, site, shipping, subscription } from '../config/commerce
 import { renderHome } from './templates/home.js';
 import { renderWhy, renderFaq, renderSubscription, renderContact, renderCheckout, renderOrder, renderAccount, renderLegal, renderNotFound, renderAdmin } from './templates/pages.js';
 import { sachetSvg, svgDefs } from './templates/components.js';
+import { LOCALES, DEFAULT_LOCALE, LOCALE_META, translator, href } from './i18n/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..', '..');
@@ -48,32 +49,40 @@ async function main() {
   // --- images (optimized set from tools/optimize-images.py, placeholders otherwise) ---
   const images = await resolveImages();
 
-  // --- pages ---
-  const pages = {
-    'index.html': renderHome({ assets, images }),
-    'why-rynse.html': renderWhy({ assets, images }),
-    'faq.html': renderFaq({ assets }),
-    'subscription.html': renderSubscription({ assets }),
-    'contact.html': renderContact({ assets }),
-    'checkout.html': renderCheckout({ assets }),
-    'order/index.html': renderOrder({ assets }),
-    'account.html': renderAccount({ assets }),
-    'admin/index.html': renderAdmin({ assets }),
-    '404.html': renderNotFound({ assets }),
-  };
-  const legal = renderLegal({ assets });
-  pages['privacy.html'] = legal.privacy; pages['cookies.html'] = legal.cookies; pages['terms.html'] = legal.terms; pages['shipping-returns.html'] = legal.shipping;
-  for (const [file, html] of Object.entries(pages)) {
-    const out = path.join(DIST, file);
-    await mkdir(path.dirname(out), { recursive: true });
-    await writeFile(out, html);
+  // --- pages: one set per locale (/ = en, /nl/, /es/) ---
+  let pageCount = 0;
+  for (const locale of LOCALES) {
+    const t = translator(locale);
+    const base = locale === DEFAULT_LOCALE ? '' : `${locale}/`;
+    const pages = {
+      'index.html': renderHome({ t, assets, images }),
+      'why-rynse.html': renderWhy({ t, assets, images }),
+      'faq.html': renderFaq({ t, assets }),
+      'subscription.html': renderSubscription({ t, assets }),
+      'contact.html': renderContact({ t, assets }),
+      'checkout.html': renderCheckout({ t, assets }),
+      'order/index.html': renderOrder({ t, assets }),
+      'account.html': renderAccount({ t, assets }),
+      '404.html': renderNotFound({ t, assets }),
+    };
+    if (locale === DEFAULT_LOCALE) pages['admin/index.html'] = renderAdmin({ t, assets });
+    const legal = renderLegal({ t, assets });
+    pages['privacy.html'] = legal.privacy; pages['cookies.html'] = legal.cookies; pages['terms.html'] = legal.terms; pages['shipping-returns.html'] = legal.shipping;
+    for (const [file, html] of Object.entries(pages)) {
+      const out = path.join(DIST, base + file);
+      await mkdir(path.dirname(out), { recursive: true });
+      await writeFile(out, html);
+      pageCount += 1;
+    }
   }
 
   // --- SEO / discovery files ---
   const publicPaths = ['/', '/why-rynse', '/subscription', '/faq', '/contact', '/privacy', '/cookies', '/terms', '/shipping-returns'];
   const today = new Date().toISOString().slice(0, 10);
-  await writeFile(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${publicPaths.map((p) => `  <url><loc>${site.baseUrl}${p}</loc><lastmod>${today}</lastmod><changefreq>${p === '/' ? 'weekly' : 'monthly'}</changefreq><priority>${p === '/' ? '1.0' : '0.6'}</priority></url>`).join('\n')}\n</urlset>\n`);
-  await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /checkout\nDisallow: /order/\nDisallow: /account\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${site.baseUrl}/sitemap.xml\n`);
+  const alt = (p) => LOCALES.map((l) => `<xhtml:link rel="alternate" hreflang="${LOCALE_META[l].lang}" href="${site.baseUrl}${href(p, l)}"/>`).join('') + `<xhtml:link rel="alternate" hreflang="x-default" href="${site.baseUrl}${href(p, DEFAULT_LOCALE)}"/>`;
+  const urls = publicPaths.flatMap((p) => LOCALES.map((l) => `  <url><loc>${site.baseUrl}${href(p, l)}</loc>${alt(p)}<lastmod>${today}</lastmod><changefreq>${p === '/' ? 'weekly' : 'monthly'}</changefreq><priority>${p === '/' ? '1.0' : '0.6'}</priority></url>`));
+  await writeFile(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`);
+  await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /checkout\nDisallow: /*/checkout\nDisallow: /order/\nDisallow: /*/order/\nDisallow: /account\nDisallow: /*/account\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${site.baseUrl}/sitemap.xml\n`);
   await writeFile(path.join(DIST, 'llms.txt'), llmsTxt());
   await writeFile(path.join(DIST, 'site.webmanifest'), JSON.stringify({ name: brand.name, short_name: brand.name, start_url: '/', display: 'standalone', background_color: '#070d1c', theme_color: '#070d1c', icons: [{ src: '/assets/brand/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/assets/brand/icon-512.png', sizes: '512x512', type: 'image/png' }] }, null, 2));
   await writeFile(path.join(DIST, 'favicon.svg'), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0a1428"/><text x="32" y="43" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="34" fill="#e2c272">R</text></svg>`);
@@ -82,7 +91,7 @@ async function main() {
   const assoc = path.join(ASSETS, 'well-known', 'apple-developer-merchantid-domain-association');
   if (existsSync(assoc)) await cp(assoc, path.join(DIST, '.well-known', 'apple-developer-merchantid-domain-association'));
 
-  console.log(`Built ${Object.keys(pages).length} pages → dist in ${Date.now() - t0} ms`);
+  console.log(`Built ${pageCount} pages (${LOCALES.join('/')}) → dist in ${Date.now() - t0} ms`);
 }
 
 /** Map of image slots → {src, srcset, width, height, alt}. Reads src/web/assets/img/images.json if present. */
@@ -149,6 +158,9 @@ ${brand.name} is a direct-to-consumer personal-care brand. It sells one product:
 - [FAQ](${site.baseUrl}/faq)
 - [Shipping & Returns](${site.baseUrl}/shipping-returns)
 - [Contact](${site.baseUrl}/contact)
+
+## Languages
+- English (default): ${site.baseUrl}/ · Nederlands: ${site.baseUrl}/nl/ · Español: ${site.baseUrl}/es/
 
 ## Social
 - Instagram: ${brand.social.instagram.handle}

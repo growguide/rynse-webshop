@@ -12,13 +12,13 @@ results = []
 def ok(name, cond, detail=''):
     results.append((name, bool(cond), detail)); print(('PASS ' if cond else 'FAIL ') + name + (f' — {detail}' if detail and not cond else ''))
 
-async def purchase_flow(p, mode, w, h, label):
+async def purchase_flow(p, mode, w, h, label, prefix=''):
     b = await p.chromium.launch()
     ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600)
     pg = await ctx.new_page(); errors = []
     pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
-    await pg.goto(BASE + '/', wait_until='networkidle')
+    await pg.goto(BASE + prefix + '/', wait_until='networkidle')
     panel = pg.locator('[data-purchase="hero"]')
     if mode == 'subscription':
         await panel.locator('input[value="subscription"]').check(force=True)
@@ -32,9 +32,11 @@ async def purchase_flow(p, mode, w, h, label):
     totals = await pg.locator('[data-cart-totals]').inner_text()
     ok(f'{label}: cart shows totals', '€' in totals, totals)
     await pg.locator('[data-cart-checkout]').click()
-    await pg.wait_for_url('**/checkout', timeout=5000)
+    await pg.wait_for_url(f'**{prefix}/checkout', timeout=5000)
+    ok(f'{label}: checkout stays in locale', prefix in pg.url if prefix else '/nl/' not in pg.url)
     await pg.wait_for_timeout(600)
-    ok(f'{label}: checkout summary mode', mode.replace('_', ' ').split()[0].lower() in (await pg.locator('[data-sum-mode]').inner_text()).lower())
+    mode_text = (await pg.locator('[data-sum-mode]').inner_text()).strip()
+    ok(f'{label}: checkout summary mode', bool(mode_text) and (('·' in mode_text) == (mode == 'subscription')), mode_text)
     if mode == 'subscription':
         ok(f'{label}: subscription terms shown before payment', await pg.locator('[data-sub-terms]').is_visible())
     await pg.fill('#f-email', f'e2e-{int(time.time())}-{label}@example.com'); await pg.fill('#f-name', 'E2E Tester'); await pg.fill('#f-street', 'Herengracht 10'); await pg.fill('#f-postal', '1015 BK'); await pg.fill('#f-city', 'Amsterdam')
@@ -49,7 +51,8 @@ async def purchase_flow(p, mode, w, h, label):
     await pg.select_option('select[name="webhookDelay"]', '4000')  # late webhook
     await pg.click('button[type=submit]')
     await pg.wait_for_url('**/order/**', timeout=10000)
-    await pg.wait_for_function("document.querySelector('[data-order-title]') && document.querySelector('[data-order-title]').innerText.includes('Thank you')", timeout=15000)
+    ok(f'{label}: order page in locale', (prefix + '/order/') in pg.url)
+    await pg.wait_for_function("(() => { const i = document.querySelector('[data-status-icon]'); return i && !i.classList.contains('pending') && !i.classList.contains('failed'); })()", timeout=15000)
     ok(f'{label}: order page confirms payment (late webhook handled)', True)
     await pg.screenshot(path=f'{SHOTS}/order-{label}.png')
     cart = await pg.evaluate("localStorage.getItem('rynse:cart')")
@@ -61,11 +64,11 @@ async def responsive(p):
     for name, w, h in VIEWPORTS:
         b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600); pg = await ctx.new_page()
         errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
-        for path in ['/', '/checkout', '/faq', '/subscription']:
+        for path in ['/', '/checkout', '/faq', '/subscription', '/nl/', '/es/subscription']:
             await pg.goto(BASE + path, wait_until='networkidle')
             overflow = await pg.evaluate('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1')
             ok(f'{name} {path}: no horizontal overflow', not overflow)
-            if path == '/':
+            if path in ('/', '/nl/'):
                 await pg.screenshot(path=f'{SHOTS}/home-{name}.png')
                 # sticky CTA appears after scrolling past the purchase panel on mobile
                 if w < 900:
@@ -82,7 +85,7 @@ async def responsive(p):
 async def links(p):
     b = await p.chromium.launch(); pg = await (await b.new_context()).new_page()
     seen = set(); broken = []
-    for path in ['/', '/why-rynse', '/faq', '/subscription', '/contact', '/checkout', '/account', '/privacy', '/cookies', '/terms', '/shipping-returns']:
+    for path in ['/', '/why-rynse', '/faq', '/subscription', '/contact', '/checkout', '/account', '/privacy', '/cookies', '/terms', '/shipping-returns', '/nl/', '/nl/faq', '/nl/privacy', '/es/', '/es/subscription', '/es/terms']:
         await pg.goto(BASE + path)
         hrefs = await pg.evaluate("Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))")
         for h in hrefs:
@@ -96,6 +99,32 @@ async def links(p):
     for u in ['/sitemap.xml', '/robots.txt', '/llms.txt', '/favicon.svg', '/site.webmanifest', '/assets/payment/ideal.svg']:
         r = await pg.request.get(BASE + u); ok(f'{u} served', r.status == 200)
     r = await pg.request.get(BASE + '/does-not-exist'); ok('404 page', r.status == 404 and 'Nothing' in await r.text())
+    await b.close()
+
+async def language(p):
+    b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width': 1280, 'height': 800}); pg = await ctx.new_page()
+    await pg.goto(BASE + '/', wait_until='networkidle')
+    ok('EN page lang attribute', await pg.get_attribute('html', 'lang') == 'en')
+    await pg.select_option('#lang-nav-lang', 'nl'); await pg.wait_for_url('**/nl/', timeout=5000)
+    ok('switcher navigates to /nl/', pg.url.endswith('/nl/'))
+    cookies = {c['name']: c['value'] for c in await ctx.cookies()}
+    ok('language cookie set', cookies.get('rynse_lang') == 'nl')
+    ok('NL page lang attribute', await pg.get_attribute('html', 'lang') == 'nl')
+    ok('NL copy rendered', 'Abonneer' in await pg.locator('[data-purchase="hero"]').inner_text())
+    await pg.goto(BASE + '/nl/faq', wait_until='networkidle')
+    await pg.select_option('#lang-nav-lang', 'es'); await pg.wait_for_url('**/es/faq', timeout=5000)
+    ok('switcher keeps the current page (faq → /es/faq)', pg.url.endswith('/es/faq'))
+    # geo suggestion fallback (no cookie): simulate Dutch visitor on the English page
+    ctx2 = await b.new_context(viewport={'width': 390, 'height': 844}, extra_http_headers={'x-vercel-ip-country': 'NL'}); pg2 = await ctx2.new_page()
+    await pg2.goto(BASE + '/', wait_until='networkidle'); await pg2.wait_for_timeout(600)
+    ok('geo suggestion shown to NL visitor without cookie', await pg2.locator('[data-lang-suggest]').is_visible())
+    await pg2.locator('[data-lang-suggest-switch]').click(); await pg2.wait_for_url('**/nl/', timeout=5000)
+    ok('geo suggestion switches to /nl/', pg2.url.endswith('/nl/'))
+    ctx3 = await b.new_context(viewport={'width': 390, 'height': 844}, extra_http_headers={'x-vercel-ip-country': 'DE'}); pg3 = await ctx3.new_page()
+    await pg3.goto(BASE + '/', wait_until='networkidle'); await pg3.wait_for_timeout(600)
+    ok('no suggestion for German visitor (English default)', not await pg3.locator('[data-lang-suggest]').is_visible())
+    r = await pg3.request.get(BASE + '/api/geo', headers={'x-vercel-ip-country': 'MX'})
+    ok('/api/geo maps Mexico to es', (await r.json())['locale'] == 'es')
     await b.close()
 
 async def seo(p):
@@ -118,6 +147,9 @@ async def main():
     async with async_playwright() as p:
         await purchase_flow(p, 'one_time', 390, 844, 'mobile-onetime')
         await purchase_flow(p, 'subscription', 1440, 900, 'desktop-subscription')
+        await purchase_flow(p, 'one_time', 390, 844, 'mobile-nl', prefix='/nl')
+        await purchase_flow(p, 'subscription', 1280, 800, 'desktop-es', prefix='/es')
+        await language(p)
         await responsive(p)
         await links(p)
         await seo(p)

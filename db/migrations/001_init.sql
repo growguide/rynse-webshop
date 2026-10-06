@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS customers (
   email               citext NOT NULL UNIQUE,
   name                text,
   mollie_customer_id  text UNIQUE,            -- cst_xxx
-  locale              text NOT NULL DEFAULT 'nl_NL',
+  locale              text NOT NULL DEFAULT 'en',          -- en | nl | es (site language of the customer)
   marketing_consent   boolean NOT NULL DEFAULT false,
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now()

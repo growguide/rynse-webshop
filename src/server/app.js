@@ -27,6 +27,13 @@ route('GET', '/api/health', async () => {
   return json({ ok: true, provider: payConfig.provider, mode: paymentProvider().mode });
 });
 
+/** Country → language suggestion (fallback for when the Vercel middleware did not run, e.g. locally). */
+route('GET', '/api/geo', async (req) => {
+  const { localeForCountry } = await import('../web/i18n/index.js');
+  const country = (req.headers.get('x-vercel-ip-country') || process.env.DEV_GEO_COUNTRY || '').toUpperCase();
+  return json({ country: country || null, locale: localeForCountry(country) }, { headers: { 'cache-control': 'private, no-store' } });
+});
+
 route('GET', '/api/config', async (req) => {
   const { token, headers } = ensureCsrfCookie(req);
   return json({ ...publicConfig(), csrfToken: token }, { headers });
