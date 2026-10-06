@@ -2,7 +2,7 @@
 // Static site build: templates → dist/*.html, assets → dist/assets (content-hashed CSS/JS).
 // Zero dependencies; runs on Vercel's build step and locally.
 import { mkdir, rm, readFile, writeFile, cp, readdir, stat } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync as readFileSyncSafe } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -98,10 +98,24 @@ async function main() {
 async function resolveImages() {
   const manifestPath = path.join(ASSETS, 'img', 'images.json');
   const manifest = existsSync(manifestPath) ? JSON.parse(await readFile(manifestPath, 'utf8')) : {};
+  // Images keep their file names between regenerations but are served with an immutable one-year cache,
+  // so every URL gets a short content hash as a query string (?v=…) — a changed image busts the cache.
+  const versionCache = new Map();
+  const versioned = (url) => {
+    if (!url || !url.startsWith('/assets/')) return url;
+    if (!versionCache.has(url)) {
+      const file = path.join(ASSETS, url.replace(/^\/assets\//, ''));
+      let v = '';
+      try { if (existsSync(file)) v = createHash('sha1').update(readFileSyncSafe(file)).digest('hex').slice(0, 8); } catch {}
+      versionCache.set(url, v ? `${url}?v=${v}` : url);
+    }
+    return versionCache.get(url);
+  };
+  const versionSet = (srcset) => srcset ? srcset.split(',').map((e) => { const [u, d] = e.trim().split(/\s+/); return [versioned(u), d].filter(Boolean).join(' '); }).join(', ') : srcset;
   const pick = (slot, alt, fallback) => {
     const m = manifest[slot];
     if (!m) return { ...fallback, alt, placeholder: true };
-    return { src: m.src, srcset: m.srcset, srcsetAvif: m.srcsetAvif || null, width: m.width, height: m.height, alt: m.alt || alt };
+    return { src: versioned(m.src), srcset: versionSet(m.srcset), srcsetAvif: versionSet(m.srcsetAvif) || null, width: m.width, height: m.height, alt: m.alt || alt };
   };
   // Vector placeholder poster (navy studio + sachet) so the hero never ships empty.
   await mkdir(path.join(DIST, 'assets', 'img'), { recursive: true });
