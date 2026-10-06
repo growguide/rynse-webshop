@@ -27,7 +27,7 @@ async function main() {
   await mkdir(path.join(DIST, 'assets', 'js'), { recursive: true });
 
   // --- static assets ---
-  for (const dir of ['fonts', 'brand', 'payment', 'img']) {
+  for (const dir of ['fonts', 'brand', 'payment', 'img', 'video']) {
     const src = path.join(ASSETS, dir);
     if (existsSync(src)) await cp(src, path.join(DIST, 'assets', dir), { recursive: true });
   }
@@ -139,6 +139,12 @@ async function resolveImages() {
     heroPosterMobile,
     heroPosterSquare: pick('hero-many', 'A dozen RYNSE sachets floating in a dark navy studio', { src: ph45, width: 800, height: 1000 }),
     heroManifest: existsSync(path.join(ASSETS, 'hero', 'manifest.json')) ? '/assets/hero/manifest.json' : '',
+    heroClip: (() => {
+      const mp4 = path.join(ASSETS, 'video', 'hero-drop.mp4');
+      if (!existsSync(mp4)) return null;
+      const poster = existsSync(path.join(ASSETS, 'img', 'video-hero-drop-first.webp')) ? versioned('/assets/img/video-hero-drop-first.webp') : versioned(manifest.packshot?.src || '');
+      return { mp4: versioned('/assets/video/hero-drop.mp4'), webm: existsSync(path.join(ASSETS, 'video', 'hero-drop.webm')) ? versioned('/assets/video/hero-drop.webm') : null, poster, width: 1080, height: 1440 };
+    })(),
     packshot: pick('packshot', 'RYNSE box of 40 cleansing wipes with loose navy sachets', { src: ph45, width: 800, height: 1000 }),
     life: lifeAlts.map((alt, i) => pick(`life-${i + 1}`, alt, { src: ph45, width: 800, height: 1000 })),
   };

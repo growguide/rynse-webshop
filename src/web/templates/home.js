@@ -24,8 +24,9 @@ export function renderHome({ t, assets, images }) {
     </div>
     <div class="hero-stage" data-hero-stage aria-hidden="false">
       <div class="hero-glow" aria-hidden="true"></div>
-      <div class="hero-pack" data-depth="0.6">
-        ${picture({ ...images.packshot, alt: t('packshot.alt') }, { sizes: '(min-width: 900px) 48vw, 92vw', loading: 'eager', fetchpriority: 'high' })}
+      <div class="hero-pack${images.heroClip ? ' has-video' : ''}" data-depth="0.6">
+        ${images.heroClip ? `<video class="hero-video" data-hero-video muted playsinline preload="auto" poster="${esc(images.heroClip.poster)}" width="${images.heroClip.width}" height="${images.heroClip.height}" aria-hidden="true"><source src="${esc(images.heroClip.webm)}" type="video/webm"><source src="${esc(images.heroClip.mp4)}" type="video/mp4"></video>` : ''}
+        ${picture({ ...images.packshot, alt: t('packshot.alt') }, { sizes: '(min-width: 900px) 48vw, 92vw', loading: 'eager', fetchpriority: 'high', className: 'hero-still' })}
       </div>
       <div class="hero-sachet hs-1" data-depth="1.4" aria-hidden="true">${sachetSvg({ title: '' })}</div>
       <div class="hero-sachet hs-2" data-depth="1" aria-hidden="true">${sachetSvg({ title: '' })}</div>

@@ -6,6 +6,30 @@
   const stage = document.querySelector('[data-hero-stage]');
   if (!stage) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Drop-in clip: plays exactly once when the hero is on screen, then freezes; the final frame is
+  // cross-faded into the real packshot so the resting composition is pixel-identical to the still.
+  const video = stage.querySelector('[data-hero-video]');
+  const pack = stage.querySelector('.hero-pack');
+  if (video && pack) {
+    const settle = () => pack.classList.add('is-settled');
+    const fail = () => pack.classList.add('no-video');
+    if (reduce || (navigator.connection && navigator.connection.saveData)) fail();
+    else {
+      video.addEventListener('ended', settle, { once: true });
+      video.addEventListener('error', fail, { once: true });
+      let started = false;
+      const start = () => {
+        if (started) return; started = true;
+        const p = video.play();
+        if (p && p.catch) p.catch(fail);
+        // Safety net: if the clip never finishes (stalled network), show the still after 12 s.
+        setTimeout(() => { if (!pack.classList.contains('is-settled')) settle(); }, 12000);
+      };
+      if ('IntersectionObserver' in window) new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { start(); o.disconnect(); } }, { threshold: 0.3 }).observe(stage);
+      else start();
+    }
+  }
   const fine = matchMedia('(pointer: fine)').matches;
   if (reduce || !fine) return;
   const layers = Array.from(stage.querySelectorAll('[data-depth]'));

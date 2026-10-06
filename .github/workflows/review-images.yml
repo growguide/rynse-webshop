@@ -20,7 +20,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 -m pip install --quiet "pillow>=11.2"
+      - run: |
+          python3 -m pip install --quiet "pillow>=11.2"
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Download and downsize
         env:
           URLS: ${{ inputs.urls }}
@@ -29,12 +31,20 @@ jobs:
           python3 - <<'PY'
           import os, io, urllib.request, hashlib
           from PIL import Image
+          import subprocess
           for i, u in enumerate([x.strip() for x in os.environ['URLS'].split(',') if x.strip()]):
-              data = urllib.request.urlopen(u, timeout=60).read()
-              im = Image.open(io.BytesIO(data)).convert('RGB'); im.thumbnail((1400, 1400))
+              data = urllib.request.urlopen(u, timeout=120).read()
               name = hashlib.sha1(u.encode()).hexdigest()[:10]
-              im.save(f'review/{i}-{name}.jpg', quality=85)
-              print(i, u, im.size)
+              if u.lower().split('?')[0].endswith(('.mp4', '.webm', '.mov')):
+                  open('clip.mp4', 'wb').write(data)
+                  # 16-frame contact sheet (4x4) + the exact last frame
+                  subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', 'clip.mp4', '-vf', "select='not(mod(n\\,max(1\\,floor(N/16))))',scale=360:-2,tile=4x4", '-frames:v', '1', f'review/{i}-{name}-sheet.jpg'], check=True)
+                  subprocess.run(['ffmpeg', '-v', 'error', '-y', '-sseof', '-0.05', '-i', 'clip.mp4', '-frames:v', '1', '-update', '1', '-vf', 'scale=720:-2', f'review/{i}-{name}-last.jpg'], check=True)
+                  print(i, u, 'video')
+              else:
+                  im = Image.open(io.BytesIO(data)).convert('RGB'); im.thumbnail((1400, 1400))
+                  im.save(f'review/{i}-{name}.jpg', quality=85)
+                  print(i, u, im.size)
           PY
       - name: Commit to asset-review branch
         run: |

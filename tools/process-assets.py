@@ -161,4 +161,23 @@ for key, spec in manifest.get('videos', {}).items():
 if hero_manifest:
     hero_manifest['generated'] = manifest.get('generated')
     (HERO_OUT / 'manifest.json').write_text(json.dumps(hero_manifest, indent=2))
+
+# Short clips played once in the page (hero drop-in). H.264 MP4 (universal) + WebM/VP9 (smaller), no audio.
+VIDEO_OUT = ROOT / 'src/web/assets/video'
+clips = manifest.get('clips', {})
+if clips:
+    VIDEO_OUT.mkdir(parents=True, exist_ok=True)
+    print('Clips')
+for key, spec in clips.items():
+    src = fetch(spec['url'], SRC / f'{key}-clip.mp4')
+    if not src:
+        continue
+    w = spec.get('width', 1080)
+    vf = f"scale='min({w},iw)':-2:flags=lanczos"
+    mp4 = VIDEO_OUT / f'{key}.mp4'; webm = VIDEO_OUT / f'{key}.webm'
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(src), '-an', '-vf', vf, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', str(spec.get('crf', 22)), '-preset', 'slow', '-movflags', '+faststart', str(mp4)], check=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(src), '-an', '-vf', vf, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', str(spec.get('crf_webm', 34)), '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', str(webm)], check=True)
+    # Last frame as a JPEG/WebP poster so the page can hold the exact final image.
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-sseof', '-0.05', '-i', str(mp4), '-frames:v', '1', '-update', '1', str(VIDEO_OUT / f'{key}-last.webp')], check=True)
+    print(f'  {key}: mp4 {mp4.stat().st_size / 1e6:.1f} MB, webm {webm.stat().st_size / 1e6:.1f} MB')
 print('Done.')
