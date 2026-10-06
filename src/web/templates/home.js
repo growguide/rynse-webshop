@@ -17,15 +17,10 @@ export function renderHome({ t, assets, images }) {
       <p class="eyebrow reveal is-in">${esc(t('hero.eyebrow', { n }))}</p>
       <h1 class="display hero-title">${esc(t('hero.titleA'))}<br><span class="serif">${esc(t('hero.titleB'))}</span></h1>
       <p class="hero-sub">${esc(t('hero.sub', { n }))}</p>
-      <div class="hero-cta-row">
-        <a class="btn btn-primary btn-lg" href="#buy" data-scroll-buy>${esc(t('cta.get'))}</a>
-        <div class="hero-price">${priceFmt(product.priceCents, t)}<small>${esc(t('product.inclVat'))}</small>${placeholderFlag('RYNSE_PRICE_CENTS')}</div>
+      <div class="hero-buy" id="buy">
+        <h2 id="buy-title" class="sr-only">${esc(t('buy.title'))}</h2>
+        ${purchasePanel(t, { id: 'hero', compact: true })}
       </div>
-      <a class="hero-options link" href="#buy" data-scroll-options>${esc(t('hero.options'))}</a>
-      <ul class="hero-facts" aria-label="${esc(t('hero.eyebrow', { n }))}">
-        ${[2, 3, 4].map((i) => `<li>${esc(t(`facts.${i}`))}</li>`).join('')}
-      </ul>
-      ${payBadges(t, { label: false, className: 'hero-pay' })}
     </div>
     <div class="hero-stage" data-hero-stage aria-hidden="false">
       <div class="hero-glow" aria-hidden="true"></div>
@@ -38,10 +33,7 @@ export function renderHome({ t, assets, images }) {
   </div>
 </section>
 
-<section class="purchase wrap" id="buy" aria-labelledby="buy-title">
-  <h2 id="buy-title" class="sr-only">${esc(t('buy.title'))}</h2>
-  ${purchasePanel(t, { id: 'hero' })}
-</section>
+
 
 <section class="section section-tight" id="why" aria-labelledby="why-title">
   <div class="wrap">
