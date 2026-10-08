@@ -22,7 +22,7 @@
 
   const renderSub = (s) => {
     const box = $('[data-acc-sub]');
-    if (!s) { box.innerHTML = `<p class="eyebrow">${esc(T('account.subscription'))}</p><p style="margin-top:8px">${esc(T('account.noSub'))}</p><p style="margin-top:14px"><a class="btn btn-primary" href="${P}/#buy">${esc(T('account.subscribe'))}</a></p>`; return; }
+    if (!s) { box.innerHTML = `<p class="eyebrow">${esc(T('account.subscription'))}</p><p style="margin-top:8px">${esc(T('account.noSub'))}</p><p style="margin-top:14px"><a class="btn btn-primary" href="${P}/product#buy">${esc(T('account.subscribe'))}</a></p>`; return; }
     const L = s.loyalty;
     const active = ['active', 'past_due'].includes(s.status);
     box.innerHTML = `

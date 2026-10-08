@@ -136,7 +136,7 @@
     const body = $('[data-cart-body]'); const foot = $('[data-cart-foot]'); const count = $('[data-cart-count]');
     const cart = readCart();
     count.textContent = cart ? cart.quantity : 0; count.classList.toggle('is-visible', !!cart);
-    if (!cart) { body.innerHTML = `<div class="cart-empty"><p>${T('cart.empty')}</p><p style="margin-top:14px"><a class="btn btn-primary" href="${P}/#buy" data-cart-close-link>${T('cart.get')}</a></p></div>`; foot.hidden = true; $('[data-cart-close-link]', body)?.addEventListener('click', () => openCart(false)); return; }
+    if (!cart) { body.innerHTML = `<div class="cart-empty"><p>${T('cart.empty')}</p><p style="margin-top:14px"><a class="btn btn-primary" href="${P}/product#buy" data-cart-close-link>${T('cart.get')}</a></p></div>`; foot.hidden = true; $('[data-cart-close-link]', body)?.addEventListener('click', () => openCart(false)); return; }
     const sachet = $('#tpl-cart-sachet')?.innerHTML || '';
     body.innerHTML = `
       <div class="cart-item"><div class="thumb">${sachet}</div><div><div class="ci-title">${T('cart.product')}</div><div class="ci-mode">${cart.mode === 'subscription' ? T('cart.subscription', { interval: CFG.interval }) : T('cart.oneTime')}</div><div class="ci-sub">${T('cart.wipes')}</div></div></div>
@@ -192,6 +192,14 @@
     writeCart(cart); track('add_to_cart', cartParams()); openCart(true);
   });
   $('[data-scroll-options]')?.addEventListener('click', (e) => { e.preventDefault(); buy?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+  // ---------- product gallery ----------
+  const gal = $('[data-gallery]');
+  if (gal) {
+    const slides = $$('.pdp-main > *', gal); const thumbs = $$('[data-thumb]', gal);
+    const show = (i) => { slides.forEach((el, j) => { const img = el.tagName === 'IMG' ? el : el.querySelector('img'); el.classList.toggle('is-active', i === j); img?.classList.toggle('is-active', i === j); }); thumbs.forEach((b, j) => b.setAttribute('aria-selected', String(i === j))); };
+    thumbs.forEach((b) => b.addEventListener('click', () => show(Number(b.dataset.thumb))));
+  }
 
   // ---------- lifestyle slider (mobile): auto-advances card by card, pauses while the visitor touches/scrolls it ----------
   (() => {

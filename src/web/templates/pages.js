@@ -1,11 +1,40 @@
 import { brand, product, shipping, loyalty } from '../../config/commerce.js';
 import { countryOptions } from '../../config/countries.js';
-import { esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, payBadges, priceFmt, picture, split, intervalLabel } from './components.js';
-import { layout, organizationLd, breadcrumbLd, faqLd } from './layout.js';
+import { placeholderFlag, esc, sachetSvg, purchasePanel, faqItems, faqHtml, loyaltyLadder, payBadges, priceFmt, picture, split, intervalLabel, lineIcon } from './components.js';
+import { layout, organizationLd, breadcrumbLd, faqLd, productLd } from './layout.js';
 
 const head = (eyebrow, title, lead) => `<div class="wrap page-head"><p class="eyebrow">${esc(eyebrow)}</p><h1 class="h2" style="margin-top:12px">${title}</h1>${lead ? `<p class="lead" style="margin-top:16px">${lead}</p>` : ''}</div>`;
 const ph = (text) => `<span class="ph">${esc(text)}</span>`;
 const titleAB = (t, a, b) => `${esc(t(a))} <span class="serif gold">${esc(t(b))}</span>`;
+
+export function renderProduct({ t, assets, images }) {
+  const n = product.wipesPerPack;
+  const faqs = faqItems(t).slice(0, 5);
+  const gallery = images.gallery;
+  const main = `
+<section class="pdp" aria-labelledby="pdp-title">
+  <div class="wrap pdp-grid">
+    <div class="pdp-gallery" data-gallery>
+      <div class="pdp-main">${gallery.map((img, i) => picture(img, { sizes: '(min-width: 900px) 50vw, 100vw', loading: i === 0 ? 'eager' : 'lazy', fetchpriority: i === 0 ? 'high' : undefined, className: `pdp-img${i === 0 ? ' is-active' : ''}` })).join('')}</div>
+      <div class="pdp-thumbs" role="tablist" aria-label="${esc(t('pdp.faqTitle'))}">${gallery.map((img, i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-thumb="${i}">${picture(img, { sizes: '96px', alt: img.alt })}</button>`).join('')}</div>
+    </div>
+    <div class="pdp-info">
+      <p class="eyebrow">${esc(t('hero.eyebrow2'))}</p>
+      <h1 id="pdp-title" class="h2 pdp-title">${esc(t('product.shortName'))}</h1>
+      <p class="pdp-price"><span data-price>${priceFmt(product.priceCents, t)}</span>${placeholderFlag('RYNSE_PRICE_CENTS')}</p>
+      <p class="small muted pdp-vat">${esc(t('product.inclVat'))}</p>
+      <div class="pdp-buy" id="buy">${purchasePanel(t, { id: 'hero', compact: true, cta: t('pdp.addToCart') })}</div>
+      <ul class="usps">
+        <li>${lineIcon('truck')}<span>${esc(t('pdp.usp.shipping', { threshold: priceFmt(shipping.freeShippingThresholdCents, t) }))}</span></li>
+        <li>${lineIcon('box')}<span>${esc(t('pdp.usp.delivery', { estimate: shipping.deliveryEstimate }))}</span></li>
+        <li>${lineIcon('shield')}<span>${esc(t('pdp.usp.secure'))}</span></li>
+      </ul>
+      <div class="pdp-faq">${faqHtml(faqs, { open: -1 })}<p style="margin-top:18px"><a class="link" href="${t.href('/faq')}">${esc(t('faq.all'))}</a></p></div>
+    </div>
+  </div>
+</section>`;
+  return layout({ t, path: '/product', title: t('meta.product.title'), description: t('meta.product.description'), main, assets, jsonLd: [productLd(t), breadcrumbLd(t, [[t('nav.home'), '/'], [t('nav.shop'), '/product']])] });
+}
 
 export function renderWhy({ t, assets, images }) {
   const n = product.wipesPerPack;
@@ -22,7 +51,7 @@ ${head(t('whyPage.eyebrow'), titleAB(t, 'whyPage.titleA', 'whyPage.titleB'), esc
     <p class="eyebrow">${esc(t('whyPage.box.eyebrow'))}</p>
     <h2 class="h2" style="margin:14px 0 18px">${esc(t('whyPage.box.titleA', { n }))} <span class="serif gold">${esc(t('whyPage.box.titleB'))}</span></h2>
     <ul class="loyalty-rules">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
-    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-primary" href="${t.href('/')}#buy">${esc(t('cta.get'))}</a><a class="btn btn-ghost" href="${t.href('/subscription')}">${esc(t('cta.subscribe'))}</a></div>
+    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-primary" href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a><a class="btn btn-ghost" href="${t.href('/subscription')}">${esc(t('cta.subscribe'))}</a></div>
   </div>
 </div></section>
 <section class="section-tight"><div class="wrap"><div class="section-head reveal"><p class="eyebrow">${esc(t('whyPage.when.eyebrow'))}</p><h2 class="h2">${titleAB(t, 'whyPage.when.titleA', 'whyPage.when.titleB')}</h2></div>
@@ -46,7 +75,7 @@ ${head(t('subPage.eyebrow'), titleAB(t, 'loyalty.titleA', 'loyalty.titleB'), esc
   <div class="reveal">
     <h2 class="h3" style="margin-bottom:14px">${esc(t('subPage.how'))}</h2>
     <ul class="loyalty-rules">${how.map((h) => `<li><span>${h}</span></li>`).join('')}</ul>
-    <div style="margin-top:28px"><a class="btn btn-primary" href="${t.href('/')}#buy">${esc(t('cta.subscribe'))}</a></div>
+    <div style="margin-top:28px"><a class="btn btn-primary" href="${t.href('/product')}#buy">${esc(t('cta.subscribe'))}</a></div>
   </div>
   <div class="reveal">${loyaltyLadder(t)}${loyalty.levels.every((l) => l.discountPct == null) ? `<p class="small muted" style="margin-top:12px">${esc(t('loyalty.pctNote'))}</p>` : ''}</div>
 </div></section>
@@ -75,7 +104,7 @@ export function renderCheckout({ t, assets }) {
   const main = `${head(t('checkout.eyebrow'), titleAB(t, 'checkout.titleA', 'checkout.titleB'))}
 <section class="section-tight"><div class="wrap checkout-grid">
   <form class="fields" data-checkout-form novalidate>
-    <div class="alert alert-info" data-cart-empty hidden>${esc(t('checkout.empty'))} <a class="link" href="${t.href('/')}#buy">${esc(t('cta.get'))}</a></div>
+    <div class="alert alert-info" data-cart-empty hidden>${esc(t('checkout.empty'))} <a class="link" href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a></div>
     <div class="alert alert-error" data-retry-note hidden>${esc(t('checkout.retry'))}</div>
     <div class="form-section" style="border-top:0;padding-top:0"><h2 class="form-title">${esc(t('checkout.contact'))}</h2>
       <div class="field"><label for="f-email">${esc(t('checkout.email'))}</label><input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254"><span class="err">${esc(t('checkout.errEmail'))}</span></div>

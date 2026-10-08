@@ -62,6 +62,20 @@ export function picture(img, { sizes = '100vw', className = '', loading = 'lazy'
   return `<picture>${img.srcsetAvif ? `<source type="image/avif" srcset="${esc(img.srcsetAvif)}" sizes="${sizes}">` : ''}<source type="image/webp" srcset="${esc(img.srcset)}" sizes="${sizes}"><img src="${esc(img.src)}" srcset="${esc(img.srcset)}" sizes="${sizes}" ${attrs}></picture>`;
 }
 
+// Thin single-weight line icons (currentColor), 24px grid.
+export function lineIcon(name) {
+  const d = {
+    drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    leaf: '<path d="M4 20c6-1 12-6 14-16-9 1-14 6-14 16z"/><path d="M4 20c3-5 7-8 10-10"/>',
+    pack: '<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16M9 6v12"/>',
+    bag: '<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    truck: '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+    box: '<path d="M4 8l8-4 8 4v9l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v9"/>',
+    shield: '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  }[name] || '';
+  return `<svg class="icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+}
+
 export function payBadges(t, { label = true, className = '' } = {}) {
   const items = [
     { src: '/assets/payment/ideal.svg', alt: 'iDEAL' },
@@ -80,7 +94,7 @@ export function placeholderFlag(key) {
 }
 
 /** Purchase panel: selector + CTA + facts + badges. */
-export function purchasePanel(t, { id = 'hero', compact = false } = {}) {
+export function purchasePanel(t, { id = 'hero', compact = false, cta } = {}) {
   const subPct = subscription.discountPct;
   const subPrice = subPct ? priceFmt(Math.round(product.priceCents * (1 - subPct / 100)), t) : null;
   const facts = ['facts.1', 'facts.2', 'facts.3', 'facts.4'].map((k) => t(k));
@@ -92,11 +106,11 @@ export function purchasePanel(t, { id = 'hero', compact = false } = {}) {
   <fieldset class="options" style="border:0;padding:0;margin:0">
     <legend class="sr-only">${esc(t('panel.choose'))}</legend>
     <label class="option"><input type="radio" name="mode-${id}" value="one_time" checked><div class="option-title">${esc(t('panel.oneTime'))}</div><div class="option-sub">${esc(t('panel.oneTimeSub'))}</div></label>
-    <label class="option"><input type="radio" name="mode-${id}" value="subscription"><div class="option-title">${esc(t('panel.subscribe'))}<span class="tag">${subPct ? `−${subPct}%` : esc(t('panel.loyaltyTag'))}</span></div><div class="option-sub">${esc(t('panel.every', { interval: intervalLabel(t) }))}${subPrice ? ` · ${subPrice}` : ''}. ${esc(t('panel.subscribeSub'))}</div></label>
+    <label class="option"><input type="radio" name="mode-${id}" value="subscription"><div class="option-title">${esc(t('panel.subscribe'))}<span class="tag">${subPct ? `−${subPct}%` : esc(t('panel.popular'))}</span></div><div class="option-sub">${esc(t('panel.every', { interval: intervalLabel(t) }))}${subPrice ? ` · ${subPrice}` : ''}. ${esc(t('panel.subscribeSub'))}</div></label>
   </fieldset>
   <div class="panel-row">
     <div class="qty" role="group" aria-label="${esc(t('panel.qty'))}"><button type="button" data-qty="-1" aria-label="${esc(t('panel.decrease'))}">−</button><output data-qty-out aria-live="polite">1</output><button type="button" data-qty="1" aria-label="${esc(t('panel.increase'))}">+</button></div>
-    <button class="btn btn-primary" type="button" data-add><span class="spinner" aria-hidden="true"></span><span>${esc(t('cta.get'))}</span></button>
+    <button class="btn btn-primary" type="button" data-add><span class="spinner" aria-hidden="true"></span><span>${esc(cta || t('cta.get'))}</span></button>
   </div>
   <p class="sub-note" data-sub-note hidden>${esc(t('panel.subNote', { interval: intervalLabel(t) }))}</p>
   ${payBadges(t)}

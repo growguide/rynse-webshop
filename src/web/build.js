@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brand, product, site, shipping, subscription } from '../config/commerce.js';
 import { renderHome } from './templates/home.js';
-import { renderWhy, renderFaq, renderSubscription, renderContact, renderCheckout, renderOrder, renderAccount, renderLegal, renderNotFound, renderAdmin } from './templates/pages.js';
+import { renderProduct, renderWhy, renderFaq, renderSubscription, renderContact, renderCheckout, renderOrder, renderAccount, renderLegal, renderNotFound, renderAdmin } from './templates/pages.js';
 import { sachetSvg, svgDefs } from './templates/components.js';
 import { LOCALES, DEFAULT_LOCALE, LOCALE_META, translator, href } from './i18n/index.js';
 
@@ -56,6 +56,7 @@ async function main() {
     const base = locale === DEFAULT_LOCALE ? '' : `${locale}/`;
     const pages = {
       'index.html': renderHome({ t, assets, images }),
+      'product.html': renderProduct({ t, assets, images }),
       'why-rynse.html': renderWhy({ t, assets, images }),
       'faq.html': renderFaq({ t, assets }),
       'subscription.html': renderSubscription({ t, assets }),
@@ -77,7 +78,7 @@ async function main() {
   }
 
   // --- SEO / discovery files ---
-  const publicPaths = ['/', '/why-rynse', '/subscription', '/faq', '/contact', '/privacy', '/cookies', '/terms', '/shipping-returns'];
+  const publicPaths = ['/', '/product', '/why-rynse', '/subscription', '/faq', '/contact', '/privacy', '/cookies', '/terms', '/shipping-returns'];
   const today = new Date().toISOString().slice(0, 10);
   const alt = (p) => LOCALES.map((l) => `<xhtml:link rel="alternate" hreflang="${LOCALE_META[l].lang}" href="${site.baseUrl}${href(p, l)}"/>`).join('') + `<xhtml:link rel="alternate" hreflang="x-default" href="${site.baseUrl}${href(p, DEFAULT_LOCALE)}"/>`;
   const urls = publicPaths.flatMap((p) => LOCALES.map((l) => `  <url><loc>${site.baseUrl}${href(p, l)}</loc>${alt(p)}<lastmod>${today}</lastmod><changefreq>${p === '/' ? 'weekly' : 'monthly'}</changefreq><priority>${p === '/' ? '1.0' : '0.6'}</priority></url>`));
@@ -112,6 +113,17 @@ async function resolveImages() {
     return versionCache.get(url);
   };
   const versionSet = (srcset) => srcset ? srcset.split(',').map((e) => { const [u, d] = e.trim().split(/\s+/); return [versioned(u), d].filter(Boolean).join(' '); }).join(', ') : srcset;
+  // Short clips produced by tools/process-assets.py (clips section of assets-src/manifest.json).
+  const clip = (key, width, height) => {
+    const mp4 = path.join(ASSETS, 'video', `${key}.mp4`);
+    if (!existsSync(mp4)) return null;
+    const has = (f) => existsSync(path.join(ASSETS, 'video', f));
+    return {
+      mp4: versioned(`/assets/video/${key}.mp4`), webm: has(`${key}.webm`) ? versioned(`/assets/video/${key}.webm`) : null,
+      poster: has(`${key}-first.webp`) ? versioned(`/assets/video/${key}-first.webp`) : null,
+      last: has(`${key}-last.webp`) ? versioned(`/assets/video/${key}-last.webp`) : null, width, height,
+    };
+  };
   const pick = (slot, alt, fallback) => {
     const m = manifest[slot];
     if (!m) return { ...fallback, alt, placeholder: true };
@@ -139,13 +151,14 @@ async function resolveImages() {
     heroPosterMobile,
     heroPosterSquare: pick('hero-many', 'A dozen RYNSE sachets floating in a dark navy studio', { src: ph45, width: 800, height: 1000 }),
     heroManifest: existsSync(path.join(ASSETS, 'hero', 'manifest.json')) ? '/assets/hero/manifest.json' : '',
-    heroClip: (() => {
-      const mp4 = path.join(ASSETS, 'video', 'hero-drop.mp4');
-      if (!existsSync(mp4)) return null;
-      const poster = existsSync(path.join(ASSETS, 'video', 'hero-drop-first.webp')) ? versioned('/assets/video/hero-drop-first.webp') : versioned(manifest.packshot?.src || '');
-      const last = existsSync(path.join(ASSETS, 'video', 'hero-drop-last.webp')) ? versioned('/assets/video/hero-drop-last.webp') : null;
-      return { last, mp4: versioned('/assets/video/hero-drop.mp4'), webm: existsSync(path.join(ASSETS, 'video', 'hero-drop.webm')) ? versioned('/assets/video/hero-drop.webm') : null, poster, width: 1080, height: 1440 };
-    })(),
+    heroClip: clip('hero-light', 1920, 1080),
+    dropClip: clip('hero-drop', 1080, 1440),
+    heroLight: pick('hero-light', 'RYNSE sachets stacked on white marble in front of folded towels', { src: ph169, width: 1600, height: 900 }),
+    heroLightPortrait: pick('hero-light-portrait', 'RYNSE sachets stacked on white marble in front of folded towels', { src: ph45, width: 800, height: 1000 }),
+    banner: pick('banner-pocket', 'A hand slipping a RYNSE sachet into a jeans pocket', { src: ph169, width: 1600, height: 900 }),
+    moments: ['moment-sport', 'moment-travel', 'moment-work', 'moment-date'].map((k, i) => pick(k, ['A dumbbell on marble', 'A carry-on suitcase in a bright airport', 'A laptop on a clean desk', 'A restaurant table set for two'][i], { src: ph45, width: 800, height: 800 })),
+    routine: pick('routine-sink', 'RYNSE box next to a brass tap on white marble', { src: ph45, width: 800, height: 800 }),
+    gallery: ['packshot-light', 'hero-light-portrait', 'hand-sachet', 'wipe-macro'].map((k, i) => pick(k, ['RYNSE box of 40 cleansing wipes with loose sachets on white marble', 'RYNSE sachets stacked on white marble', 'A hand holding a RYNSE sachet', 'A moist white cleansing wipe on marble'][i], { src: ph45, width: 800, height: 1000 })),
     packshotLight: pick('packshot-light', 'RYNSE box of 40 cleansing wipes with loose sachets on white marble', { src: ph45, width: 800, height: 1000 }),
     packshot: pick('packshot', 'RYNSE box of 40 cleansing wipes with loose navy sachets', { src: ph45, width: 800, height: 1000 }),
     life: lifeAlts.map((alt, i) => pick(`life-${i + 1}`, alt, { src: ph45, width: 800, height: 1000 })),

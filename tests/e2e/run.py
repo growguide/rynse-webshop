@@ -18,7 +18,7 @@ async def purchase_flow(p, mode, w, h, label, prefix=''):
     pg = await ctx.new_page(); errors = []
     pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
-    await pg.goto(BASE + prefix + '/', wait_until='networkidle')
+    await pg.goto(BASE + prefix + '/product', wait_until='networkidle')
     panel = pg.locator('[data-purchase="hero"]')
     if mode == 'subscription':
         await panel.locator('input[value="subscription"]').check(force=True)
@@ -64,28 +64,29 @@ async def responsive(p):
     for name, w, h in VIEWPORTS:
         b = await p.chromium.launch(); ctx = await b.new_context(viewport={'width': w, 'height': h}, is_mobile=w < 600, has_touch=w < 600); pg = await ctx.new_page()
         errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
-        for path in ['/', '/checkout', '/faq', '/subscription', '/nl/', '/es/subscription']:
+        for path in ['/', '/product', '/checkout', '/faq', '/subscription', '/nl/', '/es/subscription']:
             await pg.goto(BASE + path, wait_until='networkidle')
             overflow = await pg.evaluate('document.documentElement.scrollWidth > document.documentElement.clientWidth + 1')
             ok(f'{name} {path}: no horizontal overflow', not overflow)
             if path in ('/', '/nl/'):
                 await pg.screenshot(path=f'{SHOTS}/home-{name}.png')
-                # sticky CTA appears after scrolling past the purchase panel on mobile
-                if w < 900:
-                    await pg.evaluate('window.scrollTo(0, document.body.scrollHeight * 0.6)'); await pg.wait_for_timeout(500)
+                h1 = await pg.locator('h1').bounding_box()
+                ok(f'{name}: headline inside viewport width', h1 and h1['x'] >= 0 and h1['x'] + h1['width'] <= w + 1)
+            if path == '/product':
+                # sticky CTA appears after scrolling past the purchase panel on phones (on tablets the panel may still be in view at the bottom)
+                if w < 700:
+                    await pg.evaluate('window.scrollTo(0, document.body.scrollHeight)'); await pg.wait_for_timeout(500)
                     ok(f'{name}: sticky mobile CTA visible', await pg.locator('[data-sticky]').evaluate("el => el.classList.contains('is-visible')"))
                 # tap targets ≥ 44px for primary CTA
                 box = await pg.locator('[data-purchase="hero"] [data-add]').bounding_box()
                 ok(f'{name}: primary CTA ≥ 44px tall', box and box['height'] >= 44)
-                h1 = await pg.locator('h1').bounding_box()
-                ok(f'{name}: headline inside viewport width', h1 and h1['x'] >= 0 and h1['x'] + h1['width'] <= w + 1)
         ok(f'{name}: no page errors', not errors, '; '.join(errors)[:200])
         await b.close()
 
 async def links(p):
     b = await p.chromium.launch(); pg = await (await b.new_context()).new_page()
     seen = set(); broken = []
-    for path in ['/', '/why-rynse', '/faq', '/subscription', '/contact', '/checkout', '/account', '/privacy', '/cookies', '/terms', '/shipping-returns', '/nl/', '/nl/faq', '/nl/privacy', '/es/', '/es/subscription', '/es/terms']:
+    for path in ['/', '/product', '/why-rynse', '/faq', '/subscription', '/contact', '/checkout', '/account', '/privacy', '/cookies', '/terms', '/shipping-returns', '/nl/', '/nl/faq', '/nl/privacy', '/es/', '/es/subscription', '/es/terms']:
         await pg.goto(BASE + path)
         hrefs = await pg.evaluate("Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))")
         for h in hrefs:
@@ -110,7 +111,7 @@ async def language(p):
     cookies = {c['name']: c['value'] for c in await ctx.cookies()}
     ok('language cookie set', cookies.get('rynse_lang') == 'nl')
     ok('NL page lang attribute', await pg.get_attribute('html', 'lang') == 'nl')
-    ok('NL copy rendered', 'Abonneer' in await pg.locator('[data-purchase="hero"]').inner_text())
+    ok('NL copy rendered', 'Piemel' in await pg.locator('h1').inner_text())
     await pg.goto(BASE + '/nl/faq', wait_until='networkidle')
     await pg.select_option('#lang-nav-lang', 'es'); await pg.wait_for_url('**/es/faq', timeout=5000)
     ok('switcher keeps the current page (faq → /es/faq)', pg.url.endswith('/es/faq'))

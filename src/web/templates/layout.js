@@ -4,7 +4,7 @@ import { esc, logo, svgDefs, sachetSvg, payBadges, isDev, intervalLabel } from '
 import { LOCALES, LOCALE_META, DEFAULT_LOCALE, href, clientStrings } from '../i18n/index.js';
 
 const navLinks = (t) => [
-  ['/', t('nav.shop')],
+  ['/product', t('nav.shop')],
   ['/why-rynse', t('nav.why')],
   ['/subscription', t('nav.subscription')],
   ['/faq', t('nav.faq')],
@@ -75,7 +75,7 @@ ${svgDefs()}
       ${langSwitcher('nav-lang')}
       <a class="icon-btn" href="${t.href('/account')}" aria-label="${esc(t('nav.account'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></a>
       <button class="icon-btn" type="button" data-cart-open aria-label="${esc(t('nav.cart'))}" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cart-count" data-cart-count>0</span></button>
-      <a class="btn btn-primary nav-cta" href="${t.href('/')}#buy">${esc(t('cta.get'))}</a>
+      <a class="btn btn-primary nav-cta" href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a>
       <button class="icon-btn nav-burger" type="button" data-menu-open aria-label="${esc(t('nav.menu'))}" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </div>
@@ -83,7 +83,7 @@ ${svgDefs()}
 <div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menu">
   <button class="icon-btn menu-close" type="button" data-menu-close aria-label="${esc(t('nav.close'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   ${links.map(([p, label]) => `<a href="${t.href(p)}">${esc(label)}</a>`).join('')}<a href="${t.href('/account')}">${esc(t('nav.account'))}</a>
-  <div class="menu-foot">${langSwitcher('menu-lang')}<a class="btn btn-primary btn-block" href="${t.href('/')}#buy">${esc(t('cta.get'))}</a><p class="small muted">${esc(t('brand.tagline'))}</p></div>
+  <div class="menu-foot">${langSwitcher('menu-lang')}<a class="btn btn-primary btn-block" href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a><p class="small muted">${esc(t('brand.tagline'))}</p></div>
 </div>
 <main id="main">
 ${main}
@@ -92,7 +92,7 @@ ${main}
   <div class="wrap">
     <div class="footer-grid">
       <div><a class="footer-logo" href="${t.href('/')}" aria-label="${esc(brand.name)}">${logo()}</a><p style="margin-top:14px;max-width:32ch">${esc(t('brand.tagline'))} ${esc(t('footer.blurb', { n: product.wipesPerPack }))}</p></div>
-      <div><h4>${esc(t('footer.shop'))}</h4><ul><li><a href="${t.href('/')}#buy">${esc(t('cta.get'))}</a></li><li><a href="${t.href('/subscription')}">${esc(t('footer.subscribe'))}</a></li><li><a href="${t.href('/why-rynse')}">${esc(t('nav.why'))}</a></li><li><a href="${t.href('/faq')}">${esc(t('nav.faq'))}</a></li></ul></div>
+      <div><h4>${esc(t('footer.shop'))}</h4><ul><li><a href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a></li><li><a href="${t.href('/subscription')}">${esc(t('footer.subscribe'))}</a></li><li><a href="${t.href('/why-rynse')}">${esc(t('nav.why'))}</a></li><li><a href="${t.href('/faq')}">${esc(t('nav.faq'))}</a></li></ul></div>
       <div><h4>${esc(t('footer.help'))}</h4><ul><li><a href="${t.href('/shipping-returns')}">${esc(t('footer.shippingReturns'))}</a></li><li><a href="${t.href('/contact')}">${esc(t('footer.contact'))}</a></li><li><a href="${t.href('/account')}">${esc(t('nav.account'))}</a></li></ul></div>
       <div><h4>${esc(t('footer.legal'))}</h4><ul><li><a href="${t.href('/privacy')}">${esc(t('footer.privacy'))}</a></li><li><a href="${t.href('/cookies')}">${esc(t('footer.cookies'))}</a></li><li><a href="${t.href('/terms')}">${esc(t('footer.terms'))}</a></li></ul></div>
     </div>
@@ -167,7 +167,7 @@ export function productLd(t) {
     ],
   };
   if (product.structuredData.includeOffer) {
-    ld.offers = { '@type': 'Offer', price: (product.priceCents / 100).toFixed(2), priceCurrency: product.currency, availability: product.structuredData.availability, url: `${site.baseUrl}${t.href('/')}#buy`, seller: { '@type': 'Organization', name: brand.name } };
+    ld.offers = { '@type': 'Offer', price: (product.priceCents / 100).toFixed(2), priceCurrency: product.currency, availability: product.structuredData.availability, url: `${site.baseUrl}${t.href('/product')}#buy`, seller: { '@type': 'Organization', name: brand.name } };
   }
   return ld;
 }
