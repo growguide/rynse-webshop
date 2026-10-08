@@ -135,7 +135,7 @@ export default {
   'faq.eyebrow': 'Good to know',
   'faq.titleA': 'Questions,',
   'faq.titleB': 'answered.',
-  'faq.all': 'All questions →',
+  'faq.all': 'All questions',
   'faq.else': 'Something else?',
   'faq.contact': 'Contact us',
   'faq.q1': 'What is RYNSE?',
@@ -320,7 +320,6 @@ export default {
   'email.magic.button': 'Sign in',
   'email.magic.ignore': "If you didn't request this, you can ignore this e-mail.",
 
-  'hero.options': 'Choose one-time or subscription ↓',
   'checkout.subConfirm': 'By paying you start a subscription: delivered and charged every {interval}, cancel anytime from your account.',
   // ---- browser strings --------------------------------------------------
   'js.cart.empty': 'Your cart is empty.',
@@ -406,4 +405,7 @@ export default {
   'js.lang.dismiss': 'No thanks',
   'shipping.worldwide': 'worldwide',
   'checkout.duties': 'Shipping outside the EU: import duties or taxes may be charged by your local customs on delivery.',
+  'hero.title': 'Willy & Vajayjay wipes.',
+  'hero.sub2': 'Clean up after you pee.',
+  'hero.facts': 'pH-balanced · Alcohol-free · Individually wrapped',
 };

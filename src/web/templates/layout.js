@@ -59,7 +59,6 @@ ${LOCALES.filter((l) => l !== locale).map((l) => `<meta property="og:locale:alte
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <link rel="preload" href="/assets/fonts/outfit-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${assets.css}">
 ${ld}
 <script>window.__RYNSE__=${JSON.stringify(clientCfg).replace(/</g, '\\u003c')};</script>

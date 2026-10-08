@@ -68,3 +68,7 @@ Generators drift on repeated text. Fix after the fact with an image edit (GPT Im
 > Edit the first image. Keep the composition, camera, lighting and every sachet position exactly as they are. Change ONLY the printed artwork: every sachet must carry the identical print shown on the second image — the bold metallic gold wordmark reading exactly "RYNSE" in heavy geometric sans-serif capitals, centered, with the small gold line "CLEANSING WIPE" directly underneath, same font, same proportions and gold tone on every sachet. No other text, no misspellings, no variations between sachets.
 
 Used on 2026-10-06 for `packshot` and `hero-many`. Review candidates with the "Fetch images for review" workflow (`asset-review` branch) when the CDN is not reachable from the build session.
+
+## Light design (2026-10-08)
+
+The site moved to an off-white base. New slot `packshot-light` (box + sachets on white marble, soft daylight) made with GPT Image 2.5 from the navy packshot as reference: "Recreate this exact packshot on a bright, clean set: white Carrara marble surface, warm off-white backdrop (#F6F4EF), soft diffused daylight from the left, a folded white towel far in the background out of focus; keep the navy packaging and gold lettering exactly as in the reference." The navy hero clip stays as the one dark, high-contrast element in the hero.

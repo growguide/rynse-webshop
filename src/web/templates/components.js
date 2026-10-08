@@ -98,7 +98,6 @@ export function purchasePanel(t, { id = 'hero', compact = false } = {}) {
     <div class="qty" role="group" aria-label="${esc(t('panel.qty'))}"><button type="button" data-qty="-1" aria-label="${esc(t('panel.decrease'))}">−</button><output data-qty-out aria-live="polite">1</output><button type="button" data-qty="1" aria-label="${esc(t('panel.increase'))}">+</button></div>
     <button class="btn btn-primary" type="button" data-add><span class="spinner" aria-hidden="true"></span><span>${esc(t('cta.get'))}</span></button>
   </div>
-  ${compact ? '' : `<ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`}
   <p class="sub-note" data-sub-note hidden>${esc(t('panel.subNote', { interval: intervalLabel(t) }))}</p>
   ${payBadges(t)}
 </div>`;
