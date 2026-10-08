@@ -1,6 +1,10 @@
 /* RYNSE — site runtime: nav, menu, cart drawer, purchase selector, sticky CTA, consent + analytics, reveals. */
 (() => {
   'use strict';
+  // Every page opens at the top (browsers otherwise restore the previous scroll position on back/forward
+  // and bfcache). In-page anchors (#buy, #faq…) still work.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (!location.hash) { window.scrollTo(0, 0); window.addEventListener('pageshow', (e) => { if (e.persisted && !location.hash) window.scrollTo(0, 0); }); }
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const CFG = window.__RYNSE__ || {};
