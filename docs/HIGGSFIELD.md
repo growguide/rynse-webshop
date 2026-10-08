@@ -72,3 +72,7 @@ Used on 2026-10-06 for `packshot` and `hero-many`. Review candidates with the "F
 ## Light design (2026-10-08)
 
 The site moved to an off-white base. New slot `packshot-light` (box + sachets on white marble, soft daylight) made with GPT Image 2.5 from the navy packshot as reference: "Recreate this exact packshot on a bright, clean set: white Carrara marble surface, warm off-white backdrop (#F6F4EF), soft diffused daylight from the left, a folded white towel far in the background out of focus; keep the navy packaging and gold lettering exactly as in the reference." The navy hero clip stays as the one dark, high-contrast element in the hero.
+
+## Reference-design rebuild (2026-10-08)
+
+Home: `hero-light` (16:9) / `hero-light-portrait` (4:5) sachets on marble with towels; clip `hero-light` (FLUX 3 Video, start = end = the still, slow push-in, plays once and holds); `banner-pocket` (hand slipping a sachet into a jeans pocket, light grey backdrop); `moment-sport|travel|work|date` (object stills, 1:1); `routine-sink` (box + sachet by a brass tap). Product page gallery: `packshot-light`, `hero-light-portrait`, `hand-sachet`, `wipe-macro`. All GPT Image 2.5 with the clean sachet render as lettering reference; sachet/box text re-edited where a render dropped the sub-line.
