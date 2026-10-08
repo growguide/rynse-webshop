@@ -416,4 +416,8 @@ export default {
   'pdp.usp.secure': 'Pago seguro y de confianza',
   'pdp.faqTitle': 'Preguntas',
   'panel.popular': 'La más elegida',
+  'routine.title': 'Una toallita. Limpio en segundos.',
+  'routine.body': 'RYNSE es una toallita limpiadora a base de agua para después de hacer pis — o para cualquier momento sin ducha ni agua corriente. pH equilibrado y sin alcohol, suave con la piel. Cada toallita va envuelta individualmente: bolsillo, bolsa de deporte o equipaje de mano, siempre fresca al abrirla.',
+  'routine.points': '40 toallitas por paquete, envueltas individualmente|Compra única o entrega automática cada mes|Cancela cuando quieras, sin permanencia',
+  'routine.cta2': 'Cómo funciona la suscripción',
 };

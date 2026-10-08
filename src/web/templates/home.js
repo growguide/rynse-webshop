@@ -50,10 +50,11 @@ export function renderHome({ t, assets, images }) {
   <div class="wrap routine-grid">
     <div class="routine-visual reveal">${picture(images.routine, { sizes: '(min-width: 900px) 45vw, 100vw' })}</div>
     <div class="routine-copy reveal">
-      <h2 id="routine-title" class="eyebrow routine-eyebrow">${esc(t('routine.eyebrow'))}</h2>
-      <span class="routine-rule" aria-hidden="true"></span>
-      <p class="lead">${esc(t('routine.text'))}</p>
-      <div><a class="btn btn-primary" href="${t.href('/product')}">${esc(t('routine.cta'))}</a></div>
+      <p class="eyebrow routine-eyebrow">${esc(t('routine.eyebrow'))}</p>
+      <h2 id="routine-title" class="h2">${esc(t('routine.title'))}</h2>
+      <p class="lead">${esc(t('routine.body'))}</p>
+      <ul class="routine-points">${split(t('routine.points')).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="routine-actions"><a class="btn btn-primary" href="${t.href('/product')}">${esc(t('routine.cta'))}</a><a class="btn btn-ghost" href="${t.href('/subscription')}">${esc(t('routine.cta2'))}</a></div>
     </div>
   </div>
 </section>`;

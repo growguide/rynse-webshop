@@ -430,4 +430,8 @@ export default {
   'pdp.usp.secure': 'Safe and trusted payment',
   'pdp.faqTitle': 'Questions',
   'panel.popular': 'Most chosen',
+  'routine.title': 'One wipe. Clean in seconds.',
+  'routine.body': 'RYNSE is a water-based cleansing wipe for after you pee — or for any moment without a shower or running water. pH-balanced and alcohol-free, so it is gentle on skin. Every wipe is individually wrapped: pocket, gym bag or hand luggage, always fresh when you open it.',
+  'routine.points': '40 wipes per pack, individually wrapped|Buy once or get it delivered every month|Cancel anytime, no minimum term',
+  'routine.cta2': 'How the subscription works',
 };

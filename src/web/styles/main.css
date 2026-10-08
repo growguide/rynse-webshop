@@ -178,7 +178,11 @@ p { margin: 0; }
 .routine-visual img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); background: var(--bg-3); }
 .routine-copy { display: grid; gap: 18px; justify-items: start; }
 .routine-eyebrow { color: var(--ink); font-weight: 600; letter-spacing: 0.16em; }
-.routine-rule { width: 28px; height: 2px; background: var(--ink); }
+.routine-copy .lead { max-width: 46ch; }
+.routine-points { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; color: var(--ink); font-size: 15px; }
+.routine-points li { padding-left: 18px; position: relative; }
+.routine-points li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 8px; height: 1.5px; background: var(--ink); }
+.routine-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
 
 /* product page */
 .pdp { padding-top: var(--nav-h); }

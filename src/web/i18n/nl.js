@@ -416,4 +416,8 @@ export default {
   'pdp.usp.secure': 'Veilig en vertrouwd betalen',
   'pdp.faqTitle': 'Vragen',
   'panel.popular': 'Meest gekozen',
+  'routine.title': 'Eén doekje. Schoon in een paar seconden.',
+  'routine.body': 'RYNSE is een water-based cleansing wipe voor na het plassen — of voor elk moment zonder douche of stromend water. pH-balanced en alcoholvrij, dus mild voor de huid. Elk doekje zit apart verpakt: in je broekzak, sporttas of handbagage, altijd fris als je hem opent.',
+  'routine.points': '40 doekjes per verpakking, individueel verpakt|Eenmalig kopen of elke maand automatisch bezorgd|Altijd opzegbaar, geen minimale looptijd',
+  'routine.cta2': 'Zo werkt het abonnement',
 };
