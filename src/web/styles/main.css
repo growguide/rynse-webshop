@@ -220,15 +220,20 @@ p { margin: 0; }
 .loyalty-grid { display: grid; gap: 40px; align-items: center; }
 @media (min-width: 900px) { .loyalty-grid { grid-template-columns: 1fr 1fr; gap: 80px; } }
 .ladder { display: grid; gap: 8px; padding: 0; margin: 0; }
-.ladder li { list-style: none; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 4px 14px; padding: 14px 16px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: var(--radius); }
-.ladder li:last-child { border-color: rgba(255, 255, 255, 0.5); }
-.ladder .lvl { font-size: 1.25rem; font-weight: 600; color: #fff; }
+.ladder li { list-style: none; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 4px 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); }
+.ladder li:last-child { border-color: var(--navy); }
+.ladder .lvl { font-size: 1.25rem; font-weight: 600; }
 .ladder .lvl-name { font-weight: 600; }
-.ladder .lvl-sub { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.ladder .lvl-sub { font-size: 13px; color: var(--mute); }
+.section-navy .ladder li { border-color: rgba(255, 255, 255, 0.14); background: transparent; }
+.section-navy .ladder li:last-child { border-color: rgba(255, 255, 255, 0.5); }
+.section-navy .ladder .lvl-sub { color: rgba(255, 255, 255, 0.6); }
 .ladder .lvl-pct { font-weight: 600; font-size: 1rem; grid-column: 2; }
 @media (min-width: 560px) { .ladder li { grid-template-columns: 56px 1fr auto; } .ladder .lvl-pct { grid-column: auto; text-align: right; } }
-.ladder .lvl-pct.tbd { color: rgba(255, 255, 255, 0.55); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-.loyalty-rules { display: grid; gap: 10px; margin: 22px 0 0; padding: 0; color: rgba(255, 255, 255, 0.78); font-size: 15px; }
+.ladder .lvl-pct.tbd { color: var(--mute); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.section-navy .ladder .lvl-pct.tbd { color: rgba(255, 255, 255, 0.55); }
+.loyalty-rules { display: grid; gap: 10px; margin: 22px 0 0; padding: 0; color: var(--ink-2); font-size: 15px; }
+.section-navy .loyalty-rules { color: rgba(255, 255, 255, 0.78); }
 .loyalty-rules li { list-style: none; }
 
 /* final cta */
