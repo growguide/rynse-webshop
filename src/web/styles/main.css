@@ -131,7 +131,6 @@ p { margin: 0; }
 .hero-pack.has-video .hero-still { opacity: 0; transition: opacity 0.35s linear; }
 .hero-pack.has-video.no-video .hero-still { opacity: 1; }
 .hero-pack.has-video.no-video .hero-video { opacity: 0; }
-@media (prefers-reduced-motion: reduce) { .hero-pack.has-video .hero-video { display: none; } .hero-pack.has-video .hero-still { opacity: 1; } }
 .hero-copy { display: grid; gap: 14px; justify-items: start; padding-top: 32px; padding-bottom: 44px; }
 .hero-title { max-width: 12ch; }
 .hero-sub { font-size: clamp(1.15rem, 2vw, 1.4rem); color: var(--ink-2); max-width: 30ch; line-height: 1.3; }
