@@ -182,7 +182,10 @@ p { margin: 0; }
 .routine-points { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; color: var(--ink); font-size: 15px; }
 .routine-points li { padding-left: 18px; position: relative; }
 .routine-points li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 8px; height: 1.5px; background: var(--ink); }
-.routine-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.routine-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; max-width: 100%; }
+.routine-actions .btn { white-space: normal; text-align: center; line-height: 1.2; padding-top: 12px; padding-bottom: 12px; }
+.routine-grid { min-width: 0; }
+.routine-grid > * { min-width: 0; }
 
 /* product page */
 .pdp { padding-top: var(--nav-h); }

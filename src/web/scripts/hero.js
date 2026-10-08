@@ -19,12 +19,21 @@
       video.addEventListener('ended', settle, { once: true });
       video.addEventListener('error', fail, { once: true });
       let started = false;
+      // iOS/Android only autoplay muted inline video; set the properties too (attributes alone are not
+      // always enough on iOS), and if the first play() is refused (Low Power Mode, data saver), retry on the
+      // visitor's first touch/scroll, which counts as a user gesture. Only then fall back to the still.
+      video.muted = true; video.defaultMuted = true; video.setAttribute('muted', ''); video.playsInline = true;
+      const retryOnGesture = () => {
+        const once = () => { ['touchstart', 'touchend', 'click', 'scroll', 'keydown'].forEach((ev) => window.removeEventListener(ev, once)); const p = video.play(); if (p && p.catch) p.catch(fail); };
+        ['touchstart', 'touchend', 'click', 'scroll', 'keydown'].forEach((ev) => window.addEventListener(ev, once, { passive: true, once: true }));
+        setTimeout(() => { if (video.paused && video.currentTime === 0) fail(); }, 8000);
+      };
       const start = () => {
         if (started) return; started = true;
         const p = video.play();
-        if (p && p.catch) p.catch(fail);
-        // Safety net: if the clip never finishes (stalled network), show the still after 12 s.
-        setTimeout(() => { if (!pack.classList.contains('is-settled')) settle(); }, 12000);
+        if (p && p.catch) p.catch(retryOnGesture);
+        // Safety net: if the clip never finishes (stalled network), show the still after 15 s.
+        setTimeout(() => { if (video.paused && video.currentTime === 0 && !pack.classList.contains('no-video')) fail(); else if (!video.ended) settle(); }, 15000);
       };
       if ('IntersectionObserver' in window) new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { start(); o.disconnect(); } }, { threshold: 0.3 }).observe(stage);
       else start();
