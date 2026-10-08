@@ -23,6 +23,86 @@
     "height": 1742,
     "alt": "A dozen RYNSE sachets floating in a dark navy studio"
   },
+  "hero-light": {
+    "src": "/assets/img/hero-light-960.webp",
+    "srcset": "/assets/img/hero-light-960.webp 960w",
+    "srcsetAvif": "/assets/img/hero-light-960.avif 960w",
+    "width": 960,
+    "height": 537,
+    "alt": "RYNSE sachets stacked on white marble in front of folded towels"
+  },
+  "hero-light-portrait": {
+    "src": "/assets/img/hero-light-portrait-600.webp",
+    "srcset": "/assets/img/hero-light-portrait-600.webp 600w",
+    "srcsetAvif": "/assets/img/hero-light-portrait-600.avif 600w",
+    "width": 600,
+    "height": 750,
+    "alt": "RYNSE sachets stacked on white marble in front of folded towels"
+  },
+  "routine-sink": {
+    "src": "/assets/img/routine-sink-800.webp",
+    "srcset": "/assets/img/routine-sink-400.webp 400w, /assets/img/routine-sink-800.webp 800w",
+    "srcsetAvif": "/assets/img/routine-sink-400.avif 400w, /assets/img/routine-sink-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "RYNSE box next to a brass tap on white marble"
+  },
+  "banner-pocket": {
+    "src": "/assets/img/banner-pocket-960.webp",
+    "srcset": "/assets/img/banner-pocket-960.webp 960w",
+    "srcsetAvif": "/assets/img/banner-pocket-960.avif 960w",
+    "width": 960,
+    "height": 537,
+    "alt": "A hand slipping a RYNSE sachet into a jeans pocket"
+  },
+  "moment-sport": {
+    "src": "/assets/img/moment-sport-800.webp",
+    "srcset": "/assets/img/moment-sport-400.webp 400w, /assets/img/moment-sport-800.webp 800w",
+    "srcsetAvif": "/assets/img/moment-sport-400.avif 400w, /assets/img/moment-sport-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A dumbbell on marble"
+  },
+  "moment-travel": {
+    "src": "/assets/img/moment-travel-800.webp",
+    "srcset": "/assets/img/moment-travel-400.webp 400w, /assets/img/moment-travel-800.webp 800w",
+    "srcsetAvif": "/assets/img/moment-travel-400.avif 400w, /assets/img/moment-travel-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A carry-on suitcase in a bright airport"
+  },
+  "moment-work": {
+    "src": "/assets/img/moment-work-800.webp",
+    "srcset": "/assets/img/moment-work-400.webp 400w, /assets/img/moment-work-800.webp 800w",
+    "srcsetAvif": "/assets/img/moment-work-400.avif 400w, /assets/img/moment-work-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A laptop on a clean desk"
+  },
+  "moment-date": {
+    "src": "/assets/img/moment-date-800.webp",
+    "srcset": "/assets/img/moment-date-400.webp 400w, /assets/img/moment-date-800.webp 800w",
+    "srcsetAvif": "/assets/img/moment-date-400.avif 400w, /assets/img/moment-date-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A restaurant table set for two"
+  },
+  "hand-sachet": {
+    "src": "/assets/img/hand-sachet-800.webp",
+    "srcset": "/assets/img/hand-sachet-400.webp 400w, /assets/img/hand-sachet-800.webp 800w",
+    "srcsetAvif": "/assets/img/hand-sachet-400.avif 400w, /assets/img/hand-sachet-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A hand holding a RYNSE sachet"
+  },
+  "wipe-macro": {
+    "src": "/assets/img/wipe-macro-800.webp",
+    "srcset": "/assets/img/wipe-macro-400.webp 400w, /assets/img/wipe-macro-800.webp 800w",
+    "srcsetAvif": "/assets/img/wipe-macro-400.avif 400w, /assets/img/wipe-macro-800.avif 800w",
+    "width": 800,
+    "height": 800,
+    "alt": "A moist white cleansing wipe on marble"
+  },
   "packshot-light": {
     "src": "/assets/img/packshot-light-600.webp",
     "srcset": "/assets/img/packshot-light-600.webp 600w",
