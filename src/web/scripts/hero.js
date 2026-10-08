@@ -14,15 +14,31 @@
   if (video && pack) {
     const settle = () => pack.classList.add('is-settled');
     const fail = () => pack.classList.add('no-video');
-    if (reduce || (navigator.connection && navigator.connection.saveData)) fail();
+    // Phones can refuse muted autoplay (iOS Low Power Mode, Android data saver): show the still, and
+    // play the clip after all on the visitor's first tap, which always counts as permission.
+    const retryOnTap = () => {
+      fail();
+      const again = () => {
+        removeEventListener('touchend', again); removeEventListener('click', again);
+        const p = video.play();
+        if (p && p.then) p.then(() => pack.classList.remove('no-video'), () => {});
+      };
+      addEventListener('touchend', again, { passive: true }); addEventListener('click', again);
+    };
+    video.muted = true; // the attribute alone is not always reflected before play() on older WebKit
+    if (reduce) fail();
     else {
       video.addEventListener('ended', settle, { once: true });
       video.addEventListener('error', fail, { once: true });
+      // With <source> children a failed file reports on the last <source>, not on the <video>.
+      const lastSource = video.querySelector('source:last-of-type');
+      if (lastSource) lastSource.addEventListener('error', fail, { once: true });
       let started = false;
       const start = () => {
         if (started) return; started = true;
+        if (navigator.connection && navigator.connection.saveData) { retryOnTap(); return; }
         const p = video.play();
-        if (p && p.catch) p.catch(fail);
+        if (p && p.catch) p.catch((e) => (e && e.name === 'NotAllowedError' ? retryOnTap() : fail()));
         // Safety net: if the clip never finishes (stalled network), show the still after 12 s.
         setTimeout(() => { if (!pack.classList.contains('is-settled')) settle(); }, 12000);
       };

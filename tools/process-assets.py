@@ -180,5 +180,12 @@ for key, spec in clips.items():
     # Last frame as a JPEG/WebP poster so the page can hold the exact final image.
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-sseof', '-0.05', '-i', str(mp4), '-frames:v', '1', '-update', '1', '-quality', '88', str(VIDEO_OUT / f'{key}-last.webp')], check=True)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(mp4), '-frames:v', '1', '-update', '1', '-vf', 'scale=720:-2', '-quality', '70', str(VIDEO_OUT / f'{key}-first.webp')], check=True)
+    # Phone version: the 4:5 centre crop the mobile hero shows anyway, 720 px wide, H.264 Main@3.1 so
+    # every phone decodes it in hardware; the page lists it before any VP9 file so iOS Safari never picks
+    # WebM. VP9 copy for browsers without H.264. About a third of the desktop size.
+    m_vf = "crop='min(iw,ih*4/5)':'min(ih,iw*5/4)',scale=720:900:flags=lanczos"
+    mp4_m = VIDEO_OUT / f'{key}-m.mp4'
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(src), '-an', '-vf', m_vf, '-c:v', 'libx264', '-profile:v', 'main', '-level', '3.1', '-pix_fmt', 'yuv420p', '-crf', str(spec.get('crf_mobile', 24)), '-preset', 'slow', '-movflags', '+faststart', str(mp4_m)], check=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(src), '-an', '-vf', m_vf, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', str(spec.get('crf_webm', 34)), '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', str(VIDEO_OUT / f'{key}-m.webm')], check=True)
     print(f'  {key}: mp4 {mp4.stat().st_size / 1e6:.1f} MB, webm {webm.stat().st_size / 1e6:.1f} MB')
 print('Done.')

@@ -122,6 +122,8 @@ async function resolveImages() {
       mp4: versioned(`/assets/video/${key}.mp4`), webm: has(`${key}.webm`) ? versioned(`/assets/video/${key}.webm`) : null,
       poster: has(`${key}-first.webp`) ? versioned(`/assets/video/${key}-first.webp`) : null,
       last: has(`${key}-last.webp`) ? versioned(`/assets/video/${key}-last.webp`) : null, width, height,
+      mobile: has(`${key}-m.mp4`) ? versioned(`/assets/video/${key}-m.mp4`) : null,
+      mobileWebm: has(`${key}-m.webm`) ? versioned(`/assets/video/${key}-m.webm`) : null,
     };
   };
   const pick = (slot, alt, fallback) => {
