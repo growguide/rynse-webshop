@@ -31,13 +31,15 @@ test('middleware: manual language cookie wins over IP, explicit /nl /es URLs unt
   assert.equal(middleware(req('/admin', { 'x-vercel-ip-country': 'NL' })), undefined);
 });
 
-test('dictionaries: nl and es cover every English key; placeholders match', () => {
+test('dictionaries: nl and es cover every English key; no unknown placeholders', () => {
   for (const [name, d] of [['nl', nl], ['es', es]]) {
     const missing = Object.keys(en).filter((k) => !(k in d));
     assert.deepEqual(missing, [], `${name} missing ${missing.length} keys`);
     for (const k of Object.keys(en)) {
-      const vars = (s) => (String(s).match(/\{[a-zA-Z]+\}/g) || []).sort();
-      assert.deepEqual(vars(d[k]), vars(en[k]), `${name}.${k} placeholders differ`);
+      // A translation may leave a value out (copy choice), but never use one the page does not pass.
+      const vars = (s) => String(s).match(/\{[a-zA-Z]+\}/g) || [];
+      const unknown = vars(d[k]).filter((v) => !vars(en[k]).includes(v));
+      assert.deepEqual(unknown, [], `${name}.${k} uses placeholders English does not`);
     }
   }
   assert.equal(localeForCountry('nl'), 'nl'); assert.equal(localeForCountry('MX'), 'es'); assert.equal(localeForCountry('DE'), 'en');

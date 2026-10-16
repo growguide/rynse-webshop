@@ -68,7 +68,7 @@ export function renderFaq({ t, assets }) {
 export function renderSubscription({ t, assets }) {
   const n = product.wipesPerPack;
   const interval = intervalLabel(t);
-  const how = [1, 2, 3, 4, 5, 6].map((i) => t(`subPage.how.${i}`, { interval, subFree: shipping.subscriptionShipsFree ? t('subPage.how.2.subFree') : '', account: t.href('/account') }));
+  const how = [1, 2, 3, 4, 5, 6].map((i) => t(`subPage.how.${i}`, { interval, subFree: shipping.subscriptionShipsFree ? t('subPage.how.2.subFree') : '', account: t.href('/account') })).filter(Boolean);
   const main = `
 ${head(t('subPage.eyebrow'), titleAB(t, 'loyalty.titleA', 'loyalty.titleB'), esc(t('subPage.lead', { n, interval })))}
 <section class="section-tight"><div class="wrap loyalty-grid">
@@ -79,7 +79,7 @@ ${head(t('subPage.eyebrow'), titleAB(t, 'loyalty.titleA', 'loyalty.titleB'), esc
   </div>
   <div class="reveal">${loyaltyLadder(t)}${loyalty.levels.every((l) => l.discountPct == null) ? `<p class="small muted" style="margin-top:12px">${esc(t('loyalty.pctNote'))}</p>` : ''}</div>
 </div></section>
-<section class="section-tight"><div class="wrap" style="max-width:860px"><h2 class="h3" style="margin-bottom:18px">${esc(t('subPage.questions'))}</h2>${faqHtml(faqItems(t).filter((_, i) => [4, 5, 6].includes(i)), { open: 0 })}</div></section>`;
+<section class="section-tight"><div class="wrap" style="max-width:860px"><h2 class="h3" style="margin-bottom:18px">${esc(t('subPage.questions'))}</h2>${faqHtml(faqItems(t).filter(([q], i) => [4, 5, 6].includes(i) || q === t('faq.q10')), { open: 0 })}</div></section>`;
   return layout({ t, path: '/subscription', title: t('meta.subscription.title'), description: t('meta.subscription.description', { n, interval }), main, assets, jsonLd: [breadcrumbLd(t, [[t('nav.shop'), '/'], [t('nav.subscription'), '/subscription']])] });
 }
 
