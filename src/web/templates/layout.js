@@ -91,7 +91,7 @@ ${main}
 <footer class="footer">
   <div class="wrap">
     <div class="footer-grid">
-      <div><a class="footer-logo" href="${t.href('/')}" aria-label="${esc(brand.name)}">${logo()}</a><p style="margin-top:14px;max-width:32ch">${esc(t('brand.tagline'))} ${esc(t('footer.blurb', { n: product.wipesPerPack }))}</p></div>
+      <div><a class="footer-logo" href="${t.href('/')}" aria-label="${esc(brand.name)}">${logo()}</a><p style="margin-top:14px;max-width:32ch"><strong>${esc(t('brand.tagline'))}</strong><br>${esc(t('footer.blurb', { n: product.wipesPerPack }))}</p></div>
       <div><h4>${esc(t('footer.shop'))}</h4><ul><li><a href="${t.href('/product')}#buy">${esc(t('cta.get'))}</a></li><li><a href="${t.href('/subscription')}">${esc(t('footer.subscribe'))}</a></li><li><a href="${t.href('/why-rynse')}">${esc(t('nav.why'))}</a></li><li><a href="${t.href('/faq')}">${esc(t('nav.faq'))}</a></li></ul></div>
       <div><h4>${esc(t('footer.help'))}</h4><ul><li><a href="${t.href('/shipping-returns')}">${esc(t('footer.shippingReturns'))}</a></li><li><a href="${t.href('/contact')}">${esc(t('footer.contact'))}</a></li><li><a href="${t.href('/account')}">${esc(t('nav.account'))}</a></li></ul></div>
       <div><h4>${esc(t('footer.legal'))}</h4><ul><li><a href="${t.href('/privacy')}">${esc(t('footer.privacy'))}</a></li><li><a href="${t.href('/cookies')}">${esc(t('footer.cookies'))}</a></li><li><a href="${t.href('/terms')}">${esc(t('footer.terms'))}</a></li></ul></div>
