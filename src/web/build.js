@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brand, product, site, shipping, subscription } from '../config/commerce.js';
 import { renderHome } from './templates/home.js';
+import { renderComingSoon } from './templates/comingsoon.js';
 import { renderProduct, renderWhy, renderFaq, renderSubscription, renderContact, renderCheckout, renderOrder, renderAccount, renderLegal, renderNotFound, renderAdmin } from './templates/pages.js';
 import { sachetSvg, svgDefs } from './templates/components.js';
 import { LOCALES, DEFAULT_LOCALE, LOCALE_META, translator, href } from './i18n/index.js';
@@ -65,6 +66,7 @@ async function main() {
       'order/index.html': renderOrder({ t, assets }),
       'account.html': renderAccount({ t, assets }),
       '404.html': renderNotFound({ t, assets }),
+      'coming-soon.html': renderComingSoon({ t, assets, images }),
     };
     if (locale === DEFAULT_LOCALE) pages['admin/index.html'] = renderAdmin({ t, assets });
     const legal = renderLegal({ t, assets });

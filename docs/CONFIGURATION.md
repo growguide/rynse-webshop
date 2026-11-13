@@ -64,6 +64,12 @@ discount do not stack — the higher one applies.
 - Language by IP: `middleware.js` (Vercel Edge) redirects first visits based on `x-vercel-ip-country` — NL → `/nl/`, Spanish-speaking countries → `/es/`, everything else stays English. A manual choice (footer/nav switcher) sets the `rynse_lang` cookie, which always wins; bots are never redirected and every locale has its own canonical + hreflang.
 - Order and account links are per order: `/order/RY-…?t=<token>` (token stored in `orders.access_token`, also used for the retry/cancel flow). Magic-link sign-in opens a page that posts the token once (scanner-safe).
 
+## 4a. Coming soon mode
+
+- `COMING_SOON=true` (Vercel env): every page URL shows `/coming-soon` in the visitor's language (EN/NL/ES); the address bar does not change. Legal pages (`/privacy`, `/cookies`, `/terms`, `/shipping-returns`), `/admin` and `/api/*` stay reachable. Remove the variable (and redeploy) to open the shop.
+- `COMING_SOON_KEY=<random string>`: lets the team see the real shop. Open any URL once with `?preview=<key>` (cookie for 30 days); `?preview=off` removes it.
+- Sign-ups go to the `waitlist` table (`db/migrations/002_waitlist.sql`, run `POST /api/admin/migrate`). Export: `GET /api/admin/waitlist?format=csv` with the admin token. Requires `DATABASE_URL`.
+
 ## 5. Test scenarios (brief §44)
 
 Automated against the emulator: `npm test` (27 tests, incl. i18n and the QA-fix regression suite: paid/canceled/failed/pending/expired iDEAL & card & Apple Pay, duplicate webhooks, refunds, first & recurring subscription payments, failed renewals, cancellation, loyalty reset, re-subscribe at year 1, late webhook, page refresh, forged webhook, CSRF, rate limits, frontend-amount tampering).

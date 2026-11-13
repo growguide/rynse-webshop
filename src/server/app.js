@@ -219,6 +219,20 @@ route('POST', '/api/contact', async (req) => {
   return json({ ok: true });
 });
 
+// --- Waitlist (coming soon page) ---------------------------------------------------
+route('POST', '/api/waitlist', async (req) => {
+  verifyCsrf(req);
+  await rateLimit(req, 'waitlist', { limit: 8, windowSec: 600 });
+  const body = await readJson(req, { maxBytes: 2 * 1024 });
+  if (body.website) return json({ ok: true }); // honeypot
+  const email = v.email(body.email);
+  const locale = ['en', 'nl', 'es'].includes(body.locale) ? body.locale : 'en';
+  const sql = getSql();
+  // Signing up twice is fine: same answer, no duplicate row, no hint whether the address was known.
+  await sql`INSERT INTO waitlist (email, locale, source) VALUES (${email}, ${locale}, 'coming-soon') ON CONFLICT (email) DO NOTHING`;
+  return json({ ok: true });
+});
+
 // --- Analytics (server-side copy of a few e-commerce events; no PII, no cookies) --------
 const ALLOWED_EVENTS = new Set(['add_to_cart', 'begin_checkout', 'purchase', 'subscription_selection', 'view_item', 'select_item', 'remove_from_cart', 'view_cart', 'add_payment_info']);
 const ALLOWED_PARAMS = new Set(['currency', 'value', 'quantity', 'item_variant', 'payment_type', 'transaction_id', 'shipping']);

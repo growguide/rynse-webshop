@@ -26,6 +26,10 @@ export default function middleware(request) {
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') return next();
+  if (process.env.COMING_SOON === 'true') {
+    const gated = comingSoon(request, url);
+    if (gated !== undefined) return gated;
+  }
   const first = url.pathname.split('/')[1];
   if (LOCALES.includes(first) && first !== 'en') return next(); // explicit localized URL
   if (first === 'admin') return next();
@@ -43,6 +47,38 @@ export default function middleware(request) {
   const dest = new URL(url);
   dest.pathname = `/${target}${url.pathname === '/' ? '/' : url.pathname}`;
   return new Response(null, { status: 302, headers: { location: dest.toString(), vary: 'cookie, x-vercel-ip-country', 'cache-control': 'no-store' } });
+}
+
+/**
+ * Coming soon gate (env COMING_SOON=true): every page URL shows the coming soon page in the
+ * visitor's language, without changing the address. Legal pages and /admin stay reachable.
+ * The team can still see the real shop: open any URL with ?preview=<COMING_SOON_KEY> once
+ * (sets a cookie for 30 days); ?preview=off removes it again.
+ */
+const OPEN_PAGES = new Set(['coming-soon', 'privacy', 'cookies', 'terms', 'shipping-returns', 'admin']);
+function comingSoon(request, url) {
+  const key = process.env.COMING_SOON_KEY || '';
+  const cookieHeader = request.headers.get('cookie') || '';
+  const preview = url.searchParams.get('preview');
+  if (preview !== null) {
+    const clean = new URL(url); clean.searchParams.delete('preview');
+    const headers = { location: clean.toString(), 'cache-control': 'no-store' };
+    if (key && preview === key) headers['set-cookie'] = `rynse_preview=${encodeURIComponent(key)}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`;
+    else if (preview === 'off') headers['set-cookie'] = 'rynse_preview=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax';
+    return new Response(null, { status: 302, headers });
+  }
+  if (key && readCookie(cookieHeader, 'rynse_preview') === key) return undefined; // team preview: normal shop
+
+  const parts = url.pathname.split('/').filter(Boolean);
+  let locale = LOCALES.includes(parts[0]) ? parts.shift() : null;
+  if (OPEN_PAGES.has(parts[0])) return undefined;
+  if (!locale) {
+    const cookie = readCookie(cookieHeader, 'rynse_lang');
+    const country = (request.headers.get('x-vercel-ip-country') || '').toUpperCase();
+    locale = cookie && LOCALES.includes(cookie) ? cookie : (BOT.test(request.headers.get('user-agent') || '') ? 'en' : COUNTRY_LOCALE[country] || 'en');
+  }
+  const dest = new URL(locale === 'en' ? '/coming-soon' : `/${locale}/coming-soon`, url);
+  return new Response(null, { headers: { 'x-middleware-rewrite': dest.toString(), 'cache-control': 'no-store', vary: 'cookie, x-vercel-ip-country' } });
 }
 
 function next() {

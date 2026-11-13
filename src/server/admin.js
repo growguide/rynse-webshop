@@ -22,6 +22,17 @@ export function adminRoutes(route) {
     return json({ ok: true, ...result });
   });
 
+  // Waitlist export: JSON by default, CSV with ?format=csv (for importing into a mail tool at launch).
+  route('GET', '/api/admin/waitlist', async (req, { url }) => {
+    await guard(req);
+    const rows = await getSql()`SELECT email, locale, created_at FROM waitlist ORDER BY created_at`;
+    if (url.searchParams.get('format') === 'csv') {
+      const csv = ['email,locale,signed_up_at', ...rows.map((r) => `${r.email},${r.locale},${new Date(r.created_at).toISOString()}`)].join('\n') + '\n';
+      return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="rynse-waitlist.csv"', 'cache-control': 'no-store' } });
+    }
+    return json({ count: rows.length, signups: rows });
+  });
+
   route('GET', '/api/admin/orders', async (req, { url }) => {
     await guard(req);
     const sql = getSql();
