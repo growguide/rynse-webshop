@@ -58,7 +58,7 @@ ${LOCALES.map((l) => `<link rel="alternate" hreflang="${LOCALE_META[l].lang}" hr
     <p class="eyebrow cs-eyebrow"><span class="cs-dot" aria-hidden="true"></span>${esc(t('cs.eyebrow'))}</p>
     <h1 id="cs-title" class="cs-title">${esc(t('cs.title'))}</h1>
     <p class="cs-sub">${esc(t('cs.sub'))}</p>
-    <p class="cs-lead">${esc(t('cs.lead'))}</p>
+    <div class="cs-lead">${t('cs.lead').split('|').map((x) => `<p>${esc(x)}</p>`).join('')}</div>
     <ul class="cs-facts">${['cs.fact1', 'cs.fact2', 'cs.fact3'].map((k) => `<li>${esc(t(k))}</li>`).join('')}</ul>
 
     <form class="cs-form" data-cs-form novalidate>
@@ -68,7 +68,7 @@ ${LOCALES.map((l) => `<link rel="alternate" hreflang="${LOCALE_META[l].lang}" hr
         <button class="btn btn-primary" type="submit">${esc(t('cs.cta'))}</button>
       </div>
       <input type="text" name="website" tabindex="-1" autocomplete="off" class="cs-hp" aria-hidden="true">
-      <p class="cs-note small">${esc(t('cs.note'))} <a href="${t.href('/privacy')}">${esc(t('footer.privacy'))}</a></p>
+      <p class="cs-note small">${esc(t('cs.note'))} <a href="${t.href('/privacy')}">${esc(t('cs.privacy'))}</a></p>
       <p class="cs-msg cs-msg-error" data-cs-error role="alert" hidden></p>
     </form>
     <div class="cs-done" data-cs-done hidden>

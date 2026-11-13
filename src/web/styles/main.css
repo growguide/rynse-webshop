@@ -479,9 +479,9 @@ p { margin: 0; }
 .cs-eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-2); }
 .cs-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 0 rgba(169, 138, 74, 0.5); animation: cs-pulse 2.4s ease-out infinite; }
 @keyframes cs-pulse { 0% { box-shadow: 0 0 0 0 rgba(169, 138, 74, 0.45); } 70% { box-shadow: 0 0 0 10px rgba(169, 138, 74, 0); } 100% { box-shadow: 0 0 0 0 rgba(169, 138, 74, 0); } }
-.cs-title { margin-top: 18px; font-size: clamp(2.4rem, 5.2vw, 3.9rem); font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; }
+.cs-title { margin-top: 18px; font-size: clamp(2.2rem, 4.6vw, 3.4rem); text-wrap: balance; font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; }
 .cs-sub { margin-top: 14px; font-size: clamp(1.15rem, 1.8vw, 1.4rem); color: var(--ink-2); }
-.cs-lead { margin-top: 18px; color: var(--ink-2); max-width: 44ch; }
+.cs-lead { margin-top: 18px; color: var(--ink-2); max-width: 44ch; display: grid; gap: 10px; }
 .cs-facts { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .cs-facts li { font-size: 13px; letter-spacing: 0.01em; color: var(--ink-2); padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255, 255, 255, 0.5); }
 .cs-form { margin-top: 28px; }
