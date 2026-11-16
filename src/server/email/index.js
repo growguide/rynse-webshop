@@ -6,14 +6,14 @@ import * as templates from './templates.js';
 import { intervalLabel, pickLocale } from '../../web/i18n/index.js';
 import { subscription } from '../../config/commerce.js';
 
-async function sendViaResend({ to, subject, html, text }) {
+async function sendViaResend({ to, subject, html, text, replyTo }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error('RESEND_API_KEY is not set');
   const from = process.env.EMAIL_FROM || `${brand.name} <${brand.supportEmail}>`;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html, text, reply_to: brand.supportEmail }),
+    body: JSON.stringify({ from, to: [to], subject, html, text, reply_to: replyTo || brand.supportEmail }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Resend error ${res.status}: ${data?.message || 'unknown'}`);
@@ -62,4 +62,22 @@ export async function sendOnce(dedupeKey, templateName, data) {
     await sql`DELETE FROM email_log WHERE id = ${reserved.id}`;
     throw err;
   }
+}
+
+/** Owner's inbox for sign-up and form notifications. */
+export const notifyAddress = () => process.env.NOTIFY_EMAIL || brand.supportEmail;
+
+/**
+ * Send right away, without the dedupe log (works without a database).
+ * For one-off mails where the caller already knows it should send (new sign-up, form post).
+ */
+export async function sendNow(templateName, data) {
+  const tpl = templates[templateName];
+  if (!tpl) throw new Error(`Unknown e-mail template ${templateName}`);
+  const locale = pickLocale(data.locale) || 'en';
+  const msg = tpl({ ...data, locale, brand, siteUrl: site.baseUrl });
+  const provider = process.env.EMAIL_PROVIDER || 'log';
+  const transport = transports[provider];
+  if (!transport) throw new Error(`Unknown EMAIL_PROVIDER ${provider}`);
+  return transport({ to: data.to, replyTo: data.replyTo, ...msg });
 }

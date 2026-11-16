@@ -445,4 +445,8 @@ export default {
   'cs.error': "Er ging iets mis. Probeer het zo nog eens.",
   'cs.busy': "Even geduld…",
   'cs.privacy': "Privacyverklaring",
+  'email.waitlist.title': "Je staat op de lijst.",
+  'email.waitlist.p1': "Bedankt voor je inschrijving bij RYNSE, individueel verpakte reinigingsdoekjes voor mannen.",
+  'email.waitlist.p2': "We leggen de laatste hand aan de webshop. Zodra RYNSE live gaat, hoor jij het als eerste.",
+  'email.waitlist.p3': "Geen spam, alleen updates die ertoe doen. Wil je geen mails meer? Beantwoord deze mail, dan halen we je van de lijst.",
 };

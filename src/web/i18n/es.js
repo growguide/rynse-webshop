@@ -441,4 +441,8 @@ export default {
   'cs.error': "Algo salió mal. Inténtalo de nuevo en un momento.",
   'cs.busy': "Un momento…",
   'cs.privacy': "Política de privacidad",
+  'email.waitlist.title': "Ya estás en la lista.",
+  'email.waitlist.p1': "Gracias por apuntarte a RYNSE, toallitas limpiadoras para hombres envueltas individualmente.",
+  'email.waitlist.p2': "Estamos dando los últimos toques a la tienda. En cuanto RYNSE esté disponible, serás el primero en saberlo.",
+  'email.waitlist.p3': "Sin spam, solo novedades que importan. ¿Prefieres no recibir más correos? Responde a este mensaje y te quitaremos de la lista.",
 };

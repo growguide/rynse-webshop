@@ -95,4 +95,22 @@ export function contactMessage(d) {
     `From: ${d.name} <${d.fromEmail}>\n\n${d.message}`);
 }
 
+/** Sent to someone who joins the waitlist on the coming soon page. */
+export function waitlistWelcome(d) {
+  const t = tr(d);
+  const paras = [t('email.waitlist.p1'), t('email.waitlist.p2'), t('email.waitlist.p3')];
+  return layout(d, t, t('email.waitlist.title'),
+    paras.map((p) => `<p>${esc(p)}</p>`).join(''),
+    paras.join('\n\n'));
+}
+
+/** Sent to the owner for every new waitlist sign-up (Dutch: internal mail). */
+export function waitlistNotify(d) {
+  const t = translator('nl');
+  const lang = LOCALE_META[d.signupLocale]?.name || d.signupLocale;
+  return layout(d, t, `Nieuwe inschrijving: ${d.email}`,
+    `<p>Er heeft zich iemand ingeschreven op de coming soon pagina.</p><p>E-mail: <a href="mailto:${esc(d.email)}" style="color:#E2C272">${esc(d.email)}</a><br>Taal: ${esc(lang)}<br>Tijd: ${esc(d.when)}</p>`,
+    `Er heeft zich iemand ingeschreven op de coming soon pagina.\n\nE-mail: ${d.email}\nTaal: ${lang}\nTijd: ${d.when}`);
+}
+
 export const emailLocales = LOCALE_META;

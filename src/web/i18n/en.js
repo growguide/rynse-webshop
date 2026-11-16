@@ -455,4 +455,8 @@ export default {
   'cs.error': "Something went wrong. Please try again in a moment.",
   'cs.busy': "One moment…",
   'cs.privacy': "Privacy Policy",
+  'email.waitlist.title': "You are on the list.",
+  'email.waitlist.p1': "Thanks for signing up for RYNSE, individually wrapped cleansing wipes for men.",
+  'email.waitlist.p2': "We are putting the finishing touches on our shop. As soon as RYNSE launches, you will be the first to know.",
+  'email.waitlist.p3': "No spam, only updates that matter. Rather not hear from us? Just reply to this e-mail and we will take you off the list.",
 };

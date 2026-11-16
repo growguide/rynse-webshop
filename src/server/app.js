@@ -2,9 +2,9 @@
 // (api/index.js) and in the local dev server (src/server/dev.js).
 import { HttpError, json, html, text, redirect, readJson, readForm, v } from './http.js';
 import { getSql } from './db.js';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { runMigrations } from './migrate.js';
-import { blobConfigured, putJson } from './blobstore.js';
+import { blobConfigured, putJson, listAll } from './blobstore.js';
 import { publicConfig, product, brand, site, shipping, subscription as subConfig, payments as payConfig, formatMoney } from '../config/commerce.js';
 import { quote } from './pricing.js';
 import { startCheckout, getOrderByToken, publicOrder } from './orders.js';
@@ -13,7 +13,7 @@ import { paymentProvider, isEmulator } from './payments/provider.js';
 import { setWebhookDeliverer } from './payments/emulator.js';
 import { cancelSubscription, subscriptionSummary, reconcileSubscriptions } from './subscriptions.js';
 import { ensureCsrfCookie, verifyCsrf, rateLimit, createSession, readSession, requireSession, sessionCookieHeaders, newLoginToken, hashToken, requireCron } from './security.js';
-import { sendOnce } from './email/index.js';
+import { sendOnce, sendNow, notifyAddress } from './email/index.js';
 import { emulatorCheckoutPage } from './payments/emulator-page.js';
 import { adminRoutes } from './admin.js';
 import { localeForCountry, pickLocale, href, translator } from '../web/i18n/index.js';
@@ -210,45 +210,59 @@ route('POST', '/api/account/subscription/cancel', async (req) => {
 // --- Contact ----------------------------------------------------------------------
 route('POST', '/api/contact', async (req) => {
   verifyCsrf(req);
-  await rateLimit(req, 'contact', { limit: 5, windowSec: 600 });
+  if (process.env.DATABASE_URL) await rateLimit(req, 'contact', { limit: 5, windowSec: 600 });
   const body = await readJson(req);
   const email = v.email(body.email);
   const message = v.str(body.message, { min: 10, max: 4000, name: 'Message' });
   const name = v.str(body.name || '', { max: 120, name: 'Name' });
   if (body.website) return json({ ok: true }); // honeypot
-  const sql = getSql();
-  await sql`INSERT INTO contact_messages (email, name, message) VALUES (${email}, ${name || null}, ${message})`;
-  await sendOnce(`contact:${Date.now()}:${email}`, 'contactMessage', { to: brand.supportEmail, locale: 'en', fromEmail: email, name, message }).catch((e) => console.error('contact mail failed', e.message));
+  if (process.env.DATABASE_URL) {
+    await getSql()`INSERT INTO contact_messages (email, name, message) VALUES (${email}, ${name || null}, ${message})`;
+  } else if (blobConfigured()) {
+    await putJson(`contact/${Date.now()}-${randomBytes(4).toString('hex')}.json`, { email, name, message, createdAt: new Date().toISOString() });
+  }
+  await sendNow('contactMessage', { to: notifyAddress(), replyTo: email, locale: 'en', fromEmail: email, name, message }).catch((e) => console.error('contact mail failed', e.message));
   return json({ ok: true });
 });
 
 // --- Waitlist (coming soon page) ---------------------------------------------------
 // Stored in Postgres when DATABASE_URL is set, otherwise in the private Vercel Blob store
 // (BLOB_READ_WRITE_TOKEN), one small JSON file per address. Signing up twice is fine: same
-// answer, no duplicate, no hint whether the address was already known.
+// answer, no duplicate, no second mail, no hint whether the address was already known.
 route('POST', '/api/waitlist', async (req) => {
   verifyCsrf(req);
   const body = await readJson(req, { maxBytes: 2 * 1024 });
   if (body.website) return json({ ok: true }); // honeypot
   const email = v.email(body.email);
   const locale = ['en', 'nl', 'es'].includes(body.locale) ? body.locale : 'en';
+  let isNew;
   if (process.env.DATABASE_URL) {
     await rateLimit(req, 'waitlist', { limit: 8, windowSec: 600 }).catch((e) => { if (e instanceof HttpError) throw e; });
     const sql = getSql();
-    const insert = () => sql`INSERT INTO waitlist (email, locale, source) VALUES (${email}, ${locale}, 'coming-soon') ON CONFLICT (email) DO NOTHING`;
-    try { await insert(); } catch (e) {
+    const insert = () => sql`INSERT INTO waitlist (email, locale, source) VALUES (${email}, ${locale}, 'coming-soon') ON CONFLICT (email) DO NOTHING RETURNING id`;
+    let rows;
+    try { rows = await insert(); } catch (e) {
       if (!/waitlist/.test(e.message)) throw e;
       await runMigrations(sql); // table missing: first sign-up on a fresh database
-      await insert();
+      rows = await insert();
     }
+    isNew = rows.length > 0;
   } else if (blobConfigured()) {
-    const key = createHash('sha256').update(email).digest('hex').slice(0, 32);
-    await putJson(`waitlist/${key}.json`, { email, locale, source: 'coming-soon', createdAt: new Date().toISOString() });
+    const path = `waitlist/${createHash('sha256').update(email).digest('hex').slice(0, 32)}.json`;
+    isNew = !(await listAll(path)).some((b) => b.pathname === path);
+    if (isNew) await putJson(path, { email, locale, source: 'coming-soon', createdAt: new Date().toISOString() });
   } else {
     console.error('waitlist: no storage configured (set DATABASE_URL or connect a Blob store)');
     throw new HttpError(503, 'Sign-up is temporarily unavailable');
   }
-  console.log('waitlist: new sign-up', locale);
+  if (isNew) {
+    console.log('waitlist: new sign-up', locale);
+    const when = new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
+    await Promise.all([
+      sendNow('waitlistWelcome', { to: email, locale }).catch((e) => console.error('waitlist welcome mail failed', e.message)),
+      sendNow('waitlistNotify', { to: notifyAddress(), replyTo: email, locale: 'nl', email, signupLocale: locale, when }).catch((e) => console.error('waitlist notify mail failed', e.message)),
+    ]);
+  }
   return json({ ok: true });
 });
 
