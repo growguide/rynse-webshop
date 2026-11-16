@@ -68,7 +68,7 @@ discount do not stack — the higher one applies.
 
 - `COMING_SOON=true` (Vercel env): every page URL shows `/coming-soon` in the visitor's language (EN/NL/ES); the address bar does not change. Legal pages (`/privacy`, `/cookies`, `/terms`, `/shipping-returns`), `/admin` and `/api/*` stay reachable. Remove the variable (and redeploy) to open the shop.
 - `COMING_SOON_KEY=<random string>`: lets the team see the real shop. Open any URL once with `?preview=<key>` (cookie for 30 days); `?preview=off` removes it.
-- Sign-ups go to the `waitlist` table (`db/migrations/002_waitlist.sql`, run `POST /api/admin/migrate`). Export: `GET /api/admin/waitlist?format=csv` with the admin token. Requires `DATABASE_URL`.
+- Sign-ups go to the `waitlist` table when `DATABASE_URL` is set (created automatically on the first sign-up), otherwise to a private Vercel Blob store (`BLOB_READ_WRITE_TOKEN`, one JSON file per address under `waitlist/`). Without either the form answers 503. Export: `GET /api/admin/waitlist?format=csv` with the admin token.
 
 ## 5. Test scenarios (brief §44)
 

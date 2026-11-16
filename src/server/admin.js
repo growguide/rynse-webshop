@@ -9,6 +9,7 @@ import { sendOnce } from './email/index.js';
 import { processPaymentWebhook } from './webhooks.js';
 import { cancelSubscription } from './subscriptions.js';
 import { runMigrations } from './migrate.js';
+import { blobConfigured, listAll, readJsonBlob } from './blobstore.js';
 
 export function adminRoutes(route) {
   const guard = async (req) => { await rateLimit(req, 'admin', { limit: 120, windowSec: 60 }); requireAdmin(req); };
@@ -24,8 +25,14 @@ export function adminRoutes(route) {
 
   // Waitlist export: JSON by default, CSV with ?format=csv (for importing into a mail tool at launch).
   route('GET', '/api/admin/waitlist', async (req, { url }) => {
-    await guard(req);
-    const rows = await getSql()`SELECT email, locale, created_at FROM waitlist ORDER BY created_at`;
+    requireAdmin(req);
+    let rows;
+    if (process.env.DATABASE_URL) {
+      rows = await getSql()`SELECT email, locale, created_at FROM waitlist ORDER BY created_at`;
+    } else if (blobConfigured()) {
+      const docs = await Promise.all((await listAll('waitlist/')).map((b) => readJsonBlob(b.url)));
+      rows = docs.map((d) => ({ email: d.email, locale: d.locale, created_at: d.createdAt })).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+    } else rows = [];
     if (url.searchParams.get('format') === 'csv') {
       const csv = ['email,locale,signed_up_at', ...rows.map((r) => `${r.email},${r.locale},${new Date(r.created_at).toISOString()}`)].join('\n') + '\n';
       return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="rynse-waitlist.csv"', 'cache-control': 'no-store' } });
